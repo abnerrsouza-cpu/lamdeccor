@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Montserrat', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+}
+
+html, body {
+  background-color: #FBFAF7;
+  color: #1B1B1B;
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+}
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl border border-line shadow-soft;
+  }
+  .card-hover {
+    @apply card transition-all hover:shadow-card hover:border-navy-200;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+           font-semibold text-sm transition-colors
+           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-navy-500;
+  }
+  .btn-primary { @apply btn bg-navy-800 text-white hover:bg-navy-700; }
+  .btn-secondary { @apply btn bg-white text-navy-800 hover:bg-navy-50 border border-line; }
+  .btn-ghost { @apply btn text-navy-700 hover:bg-navy-50; }
+  .btn-danger { @apply btn bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200; }
+
+  .input {
+    @apply w-full px-3 py-2 text-sm border border-line rounded-lg bg-white
+           placeholder:text-slate-muted
+           focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent;
+  }
+  .label {
+    @apply block text-[11px] font-bold text-navy-700 uppercase tracking-wider mb-1.5;
+  }
+
+  .badge { @apply inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold; }
+  .badge-blue { @apply badge bg-navy-100 text-navy-700; }
+  .badge-gold { @apply badge bg-amber-100 text-amber-800; }
+  .badge-green { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-red { @apply badge bg-rose-100 text-rose-700; }
+  .badge-slate { @apply badge bg-slate-100 text-slate-700; }
+  .badge-purple { @apply badge bg-violet-100 text-violet-700; }
+
+  .section-title { @apply text-2xl font-bold text-navy-900 tracking-tight; }
+  .eyebrow { @apply text-[11px] font-bold uppercase tracking-wider text-navy-500; }
+
+  .h1 { @apply text-2xl font-bold text-navy-900 tracking-tight; }
+  .h2 { @apply text-lg font-bold text-navy-900; }
+  .h3 { @apply text-base font-semibold text-navy-900; }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D6DEE8; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #B6CBE0; }

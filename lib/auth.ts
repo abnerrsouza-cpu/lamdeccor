@@ -1,0 +1,67 @@
+'use server';
+
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { getDb } from './db';
+import { revalidatePath } from 'next/cache';
+
+const SESSION_COOKIE = 'lam_session';
+
+// Login simples - admin/admin123 funciona pra qualquer user com role admin
+// Demais usuários têm senha = primeiro nome em minúsculas (ex: "mariana")
+export async function login(formData: FormData) {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const senha = String(formData.get('senha') ?? '').trim();
+
+  const db = getDb();
+  const user = db.prepare(
+    'SELECT * FROM users WHERE LOWER(email) = ? OR LOWER(usuario) = ?'
+  ).get(email, email) as any;
+
+  if (!user) return { error: 'Usuário não encontrado.' };
+
+  // Verificação simplificada (MVP)
+  const validAdmin = user.role === 'admin' && senha === 'admin123';
+  const validNormal = senha === user.senha;
+  if (!validAdmin && !validNormal) {
+    return { error: 'Senha incorreta.' };
+  }
+
+  // Registra acesso
+  db.prepare(
+    `INSERT INTO acessos_log (user_id, ip, user_agent) VALUES (?, ?, ?)`
+  ).run(user.id, '127.0.0.1', 'web');
+
+  cookies().set(SESSION_COOKIE, String(user.id), {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7, // 7 dias
+  });
+
+  redirect('/');
+}
+
+export async function logout() {
+  cookies().delete(SESSION_COOKIE);
+  redirect('/login');
+}
+
+export async function getCurrentUser() {
+  const sid = cookies().get(SESSION_COOKIE)?.value;
+  if (!sid) return null;
+  const db = getDb();
+  const user = db.prepare(`
+    SELECT u.*, l.nome as loja_nome
+    FROM users u
+    LEFT JOIN lojas l ON l.id = u.loja_id
+    WHERE u.id = ?
+  `).get(Number(sid)) as any;
+  return user ?? null;
+}
+
+export async function requireUser() {
+  const u = await getCurrentUser();
+  if (!u) redirect('/login');
+  return u;
+}

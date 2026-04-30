@@ -32,10 +32,11 @@ const TIPO_ICON: Record<string, any> = {
 };
 
 export default function SolicitacoesList({
-  solicitacoes, usersTime
+  solicitacoes, usersTime, gerente = false
 }: {
   solicitacoes: any[];
   usersTime: User[];
+  gerente?: boolean;
 }) {
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
   const [pending, start] = useTransition();
@@ -57,13 +58,15 @@ export default function SolicitacoesList({
 
   return (
     <>
-      <SelectionBar
-        count={selecionados.size}
-        onClear={() => setSelecionados(new Set())}
-        onDelete={excluir}
-        pending={pending}
-        label="solicitação"
-      />
+      {!gerente && (
+        <SelectionBar
+          count={selecionados.size}
+          onClear={() => setSelecionados(new Set())}
+          onDelete={excluir}
+          pending={pending}
+          label="solicitação"
+        />
+      )}
 
       <div className="space-y-3">
         {solicitacoes.map(s => {
@@ -76,9 +79,11 @@ export default function SolicitacoesList({
                 isSel ? 'ring-2 ring-navy-500 ring-offset-2' : ''
               }`}
             >
-              <CheckboxOverlay checked={isSel} onChange={() => toggle(s.id)} />
+              {!gerente && (
+                <CheckboxOverlay checked={isSel} onChange={() => toggle(s.id)} />
+              )}
 
-              <div className="w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center shrink-0 ml-6">
+              <div className={`w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center shrink-0 ${gerente ? '' : 'ml-6'}`}>
                 <Icon className="w-5 h-5 text-navy-700" />
               </div>
               <div className="flex-1 min-w-0">
@@ -96,36 +101,52 @@ export default function SolicitacoesList({
                   {s.prazo && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {s.prazo}</span>}
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                <ResponsavelSelect
-                  solicitacaoId={s.id}
-                  responsavelAtual={s.responsavel_id}
-                  users={usersTime}
-                />
-                <div className="flex gap-1">
-                  {(['aberta', 'em_analise', 'em_execucao', 'concluida'] as const).map(st => (
-                    <form key={st} action={atualizarStatus.bind(null, s.id, st)}>
-                      <button className={
-                        'text-[10px] px-2 py-1 rounded font-semibold ' +
-                        (s.status === st ? 'bg-navy-800 text-white' : 'bg-navy-50 text-navy-700 hover:bg-navy-100')
-                      }>
-                        {st.replace('_', ' ')}
-                      </button>
-                    </form>
-                  ))}
-                </div>
-              </div>
 
-              <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <form action={async () => {
-                  if (!confirm('Excluir esta solicitação?')) return;
-                  await deletarSolicitacao(s.id);
-                }}>
-                  <button title="Excluir" className="p-1.5 bg-white/90 hover:bg-white rounded text-rose-500 hover:text-rose-700 shadow-sm">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </form>
-              </div>
+              {gerente ? (
+                /* Visão do gerente: só leitura - mostra status atual */
+                <div className="flex flex-col items-end gap-1 shrink-0 text-xs">
+                  <span className="text-slate-muted">Status atual</span>
+                  <span className={STATUS_LABEL[s.status] + ' text-sm'}>
+                    {s.status.replace('_', ' ')}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <ResponsavelSelect
+                      solicitacaoId={s.id}
+                      responsavelAtual={s.responsavel_id}
+                      users={usersTime}
+                    />
+                    <div className="flex gap-1">
+                      {(['aberta', 'em_analise', 'em_execucao', 'concluida'] as const).map(st => (
+                        <form key={st} action={atualizarStatus.bind(null, s.id, st)}>
+                          <button className={
+                            'text-[10px] px-2 py-1 rounded font-semibold ' +
+                            (s.status === st ? 'bg-navy-800 text-white' : 'bg-navy-50 text-navy-700 hover:bg-navy-100')
+                          }>
+                            {st.replace('_', ' ')}
+                          </button>
+                        </form>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!confirm('Excluir esta solicitação?')) return;
+                        start(async () => { await deletarSolicitacao(s.id); });
+                      }}
+                      title="Excluir"
+                      className="p-1.5 bg-white/90 hover:bg-white rounded text-rose-500 hover:text-rose-700 shadow-sm"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           );
         })}

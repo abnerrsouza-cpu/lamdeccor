@@ -35,6 +35,7 @@ export async function login(formData: FormData) {
   cookies().set(SESSION_COOKIE, String(user.id), {
     httpOnly: true,
     sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: 60 * 60 * 24 * 7, // 7 dias
   });
@@ -65,3 +66,6 @@ export async function requireUser() {
   if (!u) redirect('/login');
   return u;
 }
+
+// Helpers síncronos de permissão estão em lib/permissions.ts
+// (arquivos com 'use server' não podem ter funções síncronas)

@@ -96,8 +96,9 @@ function CardsView({ posts, selecionados, toggle }: {
   selecionados: Set<number>;
   toggle: (id: number) => void;
 }) {
+  const [, start] = useTransition();
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
       {posts.map(post => {
         const isSel = selecionados.has(post.id);
         return (
@@ -138,14 +139,17 @@ function CardsView({ posts, selecionados, toggle }: {
               <Link href={`/social/${post.id}`} className="p-1.5 bg-white/90 hover:bg-white rounded text-navy-600 shadow-sm" title="Editar">
                 <Edit3 className="w-3.5 h-3.5" />
               </Link>
-              <form action={async () => {
-                if (!confirm(`Excluir o post "${post.titulo}"?`)) return;
-                await deletarPostInline(post.id);
-              }}>
-                <button title="Excluir" className="p-1.5 bg-white/90 hover:bg-white rounded text-rose-500 hover:text-rose-700 shadow-sm">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </form>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!confirm(`Excluir o post "${post.titulo}"?`)) return;
+                  start(async () => { await deletarPostInline(post.id); });
+                }}
+                title="Excluir"
+                className="p-1.5 bg-white/90 hover:bg-white rounded text-rose-500 hover:text-rose-700 shadow-sm"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         );
@@ -159,6 +163,7 @@ function ListaView({ posts, selecionados, toggle }: {
   selecionados: Set<number>;
   toggle: (id: number) => void;
 }) {
+  const [, start] = useTransition();
   return (
     <div className="card overflow-hidden">
       <table className="w-full text-sm">
@@ -208,14 +213,17 @@ function ListaView({ posts, selecionados, toggle }: {
                     <Link href={`/social/${p.id}`} className="p-1 text-navy-500" title="Editar">
                       <Edit3 className="w-3.5 h-3.5" />
                     </Link>
-                    <form action={async () => {
-                      if (!confirm(`Excluir o post "${p.titulo}"?`)) return;
-                      await deletarPostInline(p.id);
-                    }}>
-                      <button title="Excluir" className="p-1 text-rose-500 hover:text-rose-700">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </form>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!confirm(`Excluir o post "${p.titulo}"?`)) return;
+                        start(async () => { await deletarPostInline(p.id); });
+                      }}
+                      title="Excluir"
+                      className="p-1 text-rose-500 hover:text-rose-700"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </td>
               </tr>

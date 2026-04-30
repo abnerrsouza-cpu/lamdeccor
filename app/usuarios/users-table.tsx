@@ -53,7 +53,7 @@ export default function UsersTable({
         pending={pending}
         label="usuário"
       />
-      <div className="card overflow-hidden">
+      <div className="card overflow-x-auto">
         <div className="px-5 py-4 border-b border-line flex items-center justify-between">
           <h2 className="h2">Usuários cadastrados</h2>
           <span className="text-xs text-slate-muted">{users.length} usuários</span>
@@ -116,14 +116,16 @@ export default function UsersTable({
                           {u.ativo ? 'desativar' : 'ativar'}
                         </button>
                       </form>
-                      <form action={async () => {
-                        if (!confirm(`Excluir o usuário ${u.nome}?`)) return;
-                        await deletarUsuario(u.id);
-                      }}>
-                        <button className="text-rose-500 hover:text-rose-700">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </form>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!confirm(`Excluir o usuário ${u.nome}?`)) return;
+                          start(async () => { await deletarUsuario(u.id); });
+                        }}
+                        className="text-rose-500 hover:text-rose-700"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
                   </td>
                 </tr>

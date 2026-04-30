@@ -7,6 +7,14 @@ import { getCurrentUser } from '@/lib/auth';
 export async function criarSolicitacao(formData: FormData) {
   const db = getDb();
   const user = await getCurrentUser();
+
+  // SEGURANÇA: gerente de loja só pode criar para a própria loja
+  // (independente do que vier no formulário)
+  const lojaIdInformada = Number(formData.get('loja_id') ?? 1);
+  const lojaId = user?.role === 'gerente_loja' && user.loja_id
+    ? user.loja_id
+    : lojaIdInformada;
+
   const r = db.prepare(`
     INSERT INTO solicitacoes (tipo, titulo, descricao, loja_id, solicitante_id, prioridade, prazo, status)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'aberta')
@@ -14,7 +22,7 @@ export async function criarSolicitacao(formData: FormData) {
     String(formData.get('tipo') ?? 'outro'),
     String(formData.get('titulo') ?? ''),
     String(formData.get('descricao') ?? ''),
-    Number(formData.get('loja_id') ?? 1),
+    lojaId,
     user?.id ?? null,
     String(formData.get('prioridade') ?? 'media'),
     String(formData.get('prazo') ?? '') || null

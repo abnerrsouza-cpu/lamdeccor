@@ -52,7 +52,7 @@ export default function UsuariosPage() {
         title="Usuários e hierarquia"
         subtitle="Cadastro de usuários, controle de acesso e monitoramento."
       />
-      <main className="p-6 space-y-6">
+      <main className="p-4 md:p-6 space-y-4 md:space-y-6">
         <details className="card p-5">
           <summary className="cursor-pointer flex items-center gap-2 h2">
             <Plus className="w-4 h-4" /> Novo usuário

@@ -66,7 +66,7 @@ export default async function DashboardPage() {
         subtitle="Aqui está o panorama do marketing da LAM hoje."
       />
 
-      <main className="p-6 space-y-5">
+      <main className="p-4 md:p-6 space-y-4 md:space-y-5">
         {/* Alerta destaque */}
         <div className="card p-5 border-amber-200 bg-gradient-to-r from-amber-50 to-white">
           <div className="flex items-start gap-3">
@@ -99,7 +99,7 @@ export default async function DashboardPage() {
               <h2 className="h2">Indicadores de marketing</h2>
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <StatCard label="Investimento total" value={fmtBRL(totalSaida)} icon={Wallet} helper="Saídas acumuladas" />
             <StatCard label="Vendas atribuídas" value={fmtBRL(totalEntrada)} icon={TrendingUp} change={{ pct: 24, up: true }} />
             <StatCard label="ROI estimado" value={`${roi.toFixed(0)}%`} icon={TrendingUp}
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
             </div>
             <Link href="/campanhas" className="text-xs text-navy-500 hover:underline">ver todas</Link>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {campanhasAtivas.map((c: any) => (
               <Link key={c.id} href={`/campanhas/${c.id}`} className="card-hover p-4 overflow-hidden">
                 <div className="h-1 -m-4 mb-3" style={{ backgroundColor: c.capa_cor }} />
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Grid de 3 blocos */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="card p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">

@@ -1,0 +1,22 @@
+# Configuração Nixpacks para Railway
+# Garante que better-sqlite3 (módulo nativo) compile corretamente
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "python3", "gcc", "gnumake"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = [
+  "npm run build",
+  "cp -r public .next/standalone/",
+  "cp -r .next/static .next/standalone/.next/"
+]
+
+[start]
+cmd = "node .next/standalone/server.js"
+
+[variables]
+NODE_ENV = "production"
+HOSTNAME = "0.0.0.0"

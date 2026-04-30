@@ -1,13 +1,17 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+import { podeEditar } from '@/lib/permissions';
 import CalendarioGrid from './calendario-grid';
 import Link from 'next/link';
-import { Plus, CalendarClock, MapPin, Users } from 'lucide-react';
+import { Plus, CalendarClock, MapPin, Users, Eye } from 'lucide-react';
 import { format, isToday, isTomorrow, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Evento } from '@/lib/types';
 
-export default function CalendarioPage({ searchParams }: { searchParams: { mes?: string; ano?: string } }) {
+export default async function CalendarioPage({ searchParams }: { searchParams: { mes?: string; ano?: string } }) {
+  const user = await getCurrentUser();
+  const editar = podeEditar(user?.role);
   const db = getDb();
   const hoje = new Date();
   const ano = Number(searchParams.ano ?? hoje.getFullYear());
@@ -47,14 +51,24 @@ export default function CalendarioPage({ searchParams }: { searchParams: { mes?:
     <>
       <Topbar
         title="Calendário"
-        subtitle="Eventos, reuniões, lançamentos e campanhas — estilo Google Agenda."
+        subtitle={
+          editar
+            ? 'Eventos, reuniões, lançamentos e campanhas — estilo Google Agenda.'
+            : 'Visualização dos eventos. Para criar/editar, fale com o time de marketing.'
+        }
         action={
-          <Link href="/calendario/novo" className="btn-primary">
-            <Plus className="w-4 h-4" /> Novo evento
-          </Link>
+          editar ? (
+            <Link href="/calendario/novo" className="btn-primary">
+              <Plus className="w-4 h-4" /> Novo evento
+            </Link>
+          ) : (
+            <span className="badge-blue flex items-center gap-1">
+              <Eye className="w-3 h-3" /> Modo visualização
+            </span>
+          )
         }
       />
-      <main className="p-6 space-y-6">
+      <main className="p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Próximos eventos */}
         <section>
           <div className="flex items-center justify-between mb-3">
@@ -70,7 +84,7 @@ export default function CalendarioPage({ searchParams }: { searchParams: { mes?:
               Nenhum evento futuro. Crie um novo para começar.
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {proximos.map((ev) => (
                 <Link
                   key={ev.id}

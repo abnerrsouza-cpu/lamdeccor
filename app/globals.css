@@ -71,3 +71,33 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #D6DEE8; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #B6CBE0; }
+
+/* Mobile-first: ajustes globais para telas pequenas */
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+  .h1 { font-size: 1.25rem !important; }
+  .h2 { font-size: 1rem !important; }
+  /* Tabelas com scroll horizontal em mobile */
+  table { min-width: 100%; }
+  .card-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Estilos exclusivos para impressão (gerar PDF) */
+@media print {
+  body { background: white !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print, aside, header { display: none !important; }
+  .print-only { display: block !important; }
+  main, .ml-60 { margin: 0 !important; padding: 0 !important; }
+  .card, .card-hover { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
+  .report-page { padding: 0 !important; max-width: 100% !important; }
+  .report-section { break-inside: avoid; page-break-inside: avoid; }
+  table { font-size: 10pt; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  h1, h2, h3 { color: #0F2A4A !important; }
+  @page { margin: 1.5cm 1.5cm; size: A4; }
+}
+.print-only { display: none; }

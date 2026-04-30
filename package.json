@@ -4,11 +4,14 @@
   "private": true,
   "description": "Painel interno de marketing da LAM Deccor",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
+    "dev:local": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node .next/standalone/server.js",
+    "start:legacy": "next start -H 0.0.0.0",
     "lint": "next lint",
-    "seed": "tsx lib/seed.ts"
+    "seed": "tsx lib/seed.ts",
+    "postinstall": "npm rebuild better-sqlite3"
   },
   "dependencies": {
     "next": "14.2.5",

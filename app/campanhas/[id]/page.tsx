@@ -1,13 +1,17 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+import { podeEditar } from '@/lib/permissions';
 import { atualizarCampanha, deletarCampanha, adicionarCanal } from '../actions';
 import CanalEditor from './canal-editor';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Trash2, Calendar, DollarSign, Plus } from 'lucide-react';
+import { ArrowLeft, Trash2, Calendar, DollarSign, Plus, Eye } from 'lucide-react';
 import type { Campanha, CampanhaCanal } from '@/lib/types';
 
-export default function CampanhaDetail({ params }: { params: { id: string } }) {
+export default async function CampanhaDetail({ params }: { params: { id: string } }) {
+  const user = await getCurrentUser();
+  const editar = podeEditar(user?.role);
   const db = getDb();
   const id = Number(params.id);
   const c = db.prepare('SELECT * FROM campanhas WHERE id = ?').get(id) as Campanha | undefined;
@@ -57,32 +61,35 @@ export default function CampanhaDetail({ params }: { params: { id: string } }) {
         </div>
 
         {/* Grid de canais (estilo briefing) */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {canais.map(canal => (
-            <CanalEditor key={canal.id} canal={canal} />
+            <CanalEditor key={canal.id} canal={canal} editar={editar} />
           ))}
 
-          {/* Botão de adicionar novo card */}
-          <form action={async () => {
-            'use server';
-            await adicionarCanal(id, 'NOVO CANAL');
-          }}>
-            <button
-              type="submit"
-              className="w-full h-full min-h-[200px] rounded-xl border-2 border-dashed border-line
-                         hover:border-navy-400 hover:bg-navy-50/30 text-slate-muted hover:text-navy-700
-                         transition-all flex flex-col items-center justify-center gap-2 p-4 group"
-            >
-              <div className="w-10 h-10 rounded-full bg-navy-50 group-hover:bg-navy-100 flex items-center justify-center transition-colors">
-                <Plus className="w-5 h-5 text-navy-500" />
-              </div>
-              <span className="text-sm font-bold uppercase tracking-wider">Adicionar card</span>
-              <span className="text-xs italic">novo canal de comunicação</span>
-            </button>
-          </form>
+          {/* Botão de adicionar novo card - só pra staff */}
+          {editar && (
+            <form action={async () => {
+              'use server';
+              await adicionarCanal(id, 'NOVO CANAL');
+            }}>
+              <button
+                type="submit"
+                className="w-full h-full min-h-[200px] rounded-xl border-2 border-dashed border-line
+                           hover:border-navy-400 hover:bg-navy-50/30 text-slate-muted hover:text-navy-700
+                           transition-all flex flex-col items-center justify-center gap-2 p-4 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-navy-50 group-hover:bg-navy-100 flex items-center justify-center transition-colors">
+                  <Plus className="w-5 h-5 text-navy-500" />
+                </div>
+                <span className="text-sm font-bold uppercase tracking-wider">Adicionar card</span>
+                <span className="text-xs italic">novo canal de comunicação</span>
+              </button>
+            </form>
+          )}
         </div>
 
-        {/* Edição da campanha */}
+        {/* Edição da campanha - só staff */}
+        {editar && (
         <details className="card p-6">
           <summary className="cursor-pointer h2">Editar campanha</summary>
           <form action={atualizarCampanha.bind(null, id)} className="mt-5 space-y-3">
@@ -129,14 +136,16 @@ export default function CampanhaDetail({ params }: { params: { id: string } }) {
                 <input name="kpi_base" defaultValue={c.kpi_base} className="input" />
               </div>
             </div>
-            <div className="flex justify-between pt-3 border-t border-line">
-              <form action={deletarCampanha.bind(null, id)}>
-                <button className="btn-danger"><Trash2 className="w-4 h-4" /> Excluir campanha</button>
-              </form>
+            <div className="flex justify-end pt-3 border-t border-line">
               <button type="submit" className="btn-primary">Salvar</button>
             </div>
           </form>
+          {/* Form de exclusão fora do form de edição (HTML não permite aninhar) */}
+          <form action={deletarCampanha.bind(null, id)} className="mt-3">
+            <button className="btn-danger"><Trash2 className="w-4 h-4" /> Excluir campanha</button>
+          </form>
         </details>
+        )}
       </main>
     </>
   );

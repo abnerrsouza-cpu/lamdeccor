@@ -2,9 +2,10 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+// Em produção (Railway), o caminho pode ser configurado via env (Volume mount)
+const DB_PATH = process.env.DATABASE_PATH ?? path.join(process.cwd(), 'data', 'lam.db');
+const DATA_DIR = path.dirname(DB_PATH);
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-const DB_PATH = path.join(DATA_DIR, 'lam.db');
 
 let _db: Database.Database | null = null;
 

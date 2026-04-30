@@ -20,10 +20,11 @@ const STATUS: Record<string, string> = {
 };
 
 export default function CampanhasList({
-  campanhas, arquivadas
+  campanhas, arquivadas, editar = true
 }: {
   campanhas: Campanha[];
   arquivadas: boolean;
+  editar?: boolean;
 }) {
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
   const [pending, start] = useTransition();
@@ -60,15 +61,17 @@ export default function CampanhasList({
 
   return (
     <>
-      <SelectionBar
-        count={selecionados.size}
-        onClear={() => setSelecionados(new Set())}
-        onDelete={excluir}
-        pending={pending}
-        label="campanha"
-      />
+      {editar && (
+        <SelectionBar
+          count={selecionados.size}
+          onClear={() => setSelecionados(new Set())}
+          onDelete={excluir}
+          pending={pending}
+          label="campanha"
+        />
+      )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {campanhas.map(c => {
           const isSel = selecionados.has(c.id);
           return (
@@ -78,11 +81,12 @@ export default function CampanhasList({
                 isSel ? 'ring-2 ring-navy-500 ring-offset-2' : ''
               }`}
             >
-              <CheckboxOverlay checked={isSel} onChange={() => toggle(c.id)} />
+              {editar && <CheckboxOverlay checked={isSel} onChange={() => toggle(c.id)} />}
 
               <Link href={`/campanhas/${c.id}`} className="block">
                 <div className="h-3" style={{ backgroundColor: c.capa_cor }} />
-                <div className="p-5 pl-8">
+                <div className={'p-5 ' + (editar ? 'pl-8' : '')}>
+
                   <div className="flex items-start justify-between mb-2">
                     <span className={STATUS[c.status] ?? 'badge-slate'}>{c.status.replace('_', ' ')}</span>
                     {c.orcamento > 0 && (
@@ -107,7 +111,8 @@ export default function CampanhasList({
                 </div>
               </Link>
 
-              {/* Ações no canto superior direito */}
+              {/* Ações no canto superior direito - apenas pra quem pode editar */}
+              {editar && (
               <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link
                   href={`/campanhas/${c.id}`}
@@ -117,36 +122,37 @@ export default function CampanhasList({
                   <Edit3 className="w-3.5 h-3.5" />
                 </Link>
                 {arquivadas ? (
-                  <form action={async () => { await desarquivarCampanha(c.id); }}>
-                    <button
-                      title="Desarquivar"
-                      className="p-1.5 bg-white/90 hover:bg-white rounded text-emerald-600 hover:text-emerald-700 shadow-sm"
-                    >
-                      <ArchiveRestore className="w-3.5 h-3.5" />
-                    </button>
-                  </form>
-                ) : (
-                  <form action={async () => { await arquivarCampanha(c.id); }}>
-                    <button
-                      title="Arquivar"
-                      className="p-1.5 bg-white/90 hover:bg-white rounded text-navy-600 hover:text-navy-900 shadow-sm"
-                    >
-                      <Archive className="w-3.5 h-3.5" />
-                    </button>
-                  </form>
-                )}
-                <form action={async () => {
-                  if (!confirm(`Excluir a campanha "${c.nome}"?`)) return;
-                  await deletarCampanhaInline(c.id);
-                }}>
                   <button
-                    title="Excluir"
-                    className="p-1.5 bg-white/90 hover:bg-white rounded text-rose-500 hover:text-rose-700 shadow-sm"
+                    type="button"
+                    onClick={() => start(async () => { await desarquivarCampanha(c.id); })}
+                    title="Desarquivar"
+                    className="p-1.5 bg-white/90 hover:bg-white rounded text-emerald-600 hover:text-emerald-700 shadow-sm"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <ArchiveRestore className="w-3.5 h-3.5" />
                   </button>
-                </form>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => start(async () => { await arquivarCampanha(c.id); })}
+                    title="Arquivar"
+                    className="p-1.5 bg-white/90 hover:bg-white rounded text-navy-600 hover:text-navy-900 shadow-sm"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!confirm(`Excluir a campanha "${c.nome}"?`)) return;
+                    start(async () => { await deletarCampanhaInline(c.id); });
+                  }}
+                  title="Excluir"
+                  className="p-1.5 bg-white/90 hover:bg-white rounded text-rose-500 hover:text-rose-700 shadow-sm"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
+              )}
             </div>
           );
         })}

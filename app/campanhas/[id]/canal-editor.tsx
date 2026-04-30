@@ -37,7 +37,7 @@ function iconePara(titulo: string) {
   return '•';
 }
 
-export default function CanalEditor({ canal }: { canal: CampanhaCanal }) {
+export default function CanalEditor({ canal, editar = true }: { canal: CampanhaCanal; editar?: boolean }) {
   const [editingTitulo, setEditingTitulo] = useState(false);
   const [editingConteudo, setEditingConteudo] = useState(false);
   const [titulo, setTitulo] = useState(canal.canal);
@@ -72,7 +72,7 @@ export default function CanalEditor({ canal }: { canal: CampanhaCanal }) {
       <div className="flex items-center gap-2 pb-3 border-b border-line">
         <span className="text-lg shrink-0">{iconePara(titulo)}</span>
 
-        {editingTitulo ? (
+        {editingTitulo && editar ? (
           <div className="flex-1 flex items-center gap-1">
             <input
               autoFocus
@@ -98,29 +98,31 @@ export default function CanalEditor({ canal }: { canal: CampanhaCanal }) {
             <h4 className="flex-1 font-bold text-navy-900 text-sm uppercase tracking-wider truncate">
               {canal.canal}
             </h4>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => setEditingTitulo(true)}
-                className="text-navy-500 hover:text-navy-700 hover:bg-navy-50 rounded p-1"
-                title="Editar título"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={excluir}
-                className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded p-1"
-                title="Excluir card"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {editar && (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => setEditingTitulo(true)}
+                  className="text-navy-500 hover:text-navy-700 hover:bg-navy-50 rounded p-1"
+                  title="Editar título"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={excluir}
+                  className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded p-1"
+                  title="Excluir card"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
 
       {/* Corpo do card - conteúdo editável */}
       <div className="pt-3 flex-1">
-        {editingConteudo ? (
+        {editingConteudo && editar ? (
           <div className="space-y-2">
             <textarea
               value={conteudo}
@@ -139,7 +141,7 @@ export default function CanalEditor({ canal }: { canal: CampanhaCanal }) {
               </button>
             </div>
           </div>
-        ) : (
+        ) : editar ? (
           <div
             onClick={() => setEditingConteudo(true)}
             className="text-xs text-slate whitespace-pre-line min-h-[100px] cursor-text hover:bg-navy-50/30 -mx-1 px-1 py-1 rounded transition-colors"
@@ -148,6 +150,12 @@ export default function CanalEditor({ canal }: { canal: CampanhaCanal }) {
               <span className="italic text-slate-muted">
                 Clique aqui para preencher.
               </span>
+            )}
+          </div>
+        ) : (
+          <div className="text-xs text-slate whitespace-pre-line min-h-[100px]">
+            {canal.conteudo || (
+              <span className="italic text-slate-muted">Sem conteúdo.</span>
             )}
           </div>
         )}

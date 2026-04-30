@@ -1,33 +1,54 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+import { ehGerente } from '@/lib/permissions';
 import { criarSolicitacao } from './actions';
 import SolicitacoesList from './solicitacoes-list';
 import { Plus } from 'lucide-react';
 import type { Loja, User } from '@/lib/types';
 
-export default function SolicitacoesPage() {
+export default async function SolicitacoesPage() {
+  const user = await getCurrentUser();
+  if (!user) return null;
   const db = getDb();
-  const solicitacoes = db.prepare(`
+  const gerente = ehGerente(user.role);
+
+  // Gerentes veem só solicitações da loja deles
+  const queryBase = `
     SELECT s.*, l.nome as loja_nome, u.nome as solicitante_nome, r.nome as responsavel_nome
     FROM solicitacoes s
     LEFT JOIN lojas l ON l.id = s.loja_id
     LEFT JOIN users u ON u.id = s.solicitante_id
     LEFT JOIN users r ON r.id = s.responsavel_id
+  `;
+  const orderBy = `
     ORDER BY
       CASE s.status WHEN 'aberta' THEN 1 WHEN 'em_analise' THEN 2 WHEN 'em_execucao' THEN 3 ELSE 4 END,
       CASE s.prioridade WHEN 'urgente' THEN 1 WHEN 'alta' THEN 2 WHEN 'media' THEN 3 ELSE 4 END
-  `).all() as any[];
+  `;
+  const solicitacoes = gerente && user.loja_id
+    ? db.prepare(`${queryBase} WHERE s.loja_id = ? ${orderBy}`).all(user.loja_id) as any[]
+    : db.prepare(`${queryBase} ${orderBy}`).all() as any[];
 
   const lojas = db.prepare('SELECT * FROM lojas ORDER BY nome').all() as Loja[];
-  const usersTime = db.prepare(`SELECT * FROM users WHERE role IN ('admin','coordenador','social_media','designer','gestor_trafego') AND ativo=1 ORDER BY nome`).all() as User[];
+  const usersTime = db.prepare(
+    `SELECT * FROM users WHERE role IN ('admin','coordenador','social_media','designer','gestor_trafego') AND ativo=1 ORDER BY nome`
+  ).all() as User[];
+
+  // Loja pré-selecionada para gerente
+  const lojaGerente = gerente ? lojas.find(l => l.id === user.loja_id) : null;
 
   return (
     <>
       <Topbar
-        title="Solicitações de loja"
-        subtitle="Pedidos dos gerentes ao time de marketing - posts, anúncios, vídeos, panfletos, artes e mais."
+        title="Solicitações"
+        subtitle={
+          gerente
+            ? `Pedidos da loja ${lojaGerente?.nome ?? '—'} ao time de marketing.`
+            : 'Pedidos dos gerentes ao time de marketing.'
+        }
       />
-      <main className="p-6 space-y-6">
+      <main className="p-4 md:p-6 space-y-4 md:space-y-6">
         <details className="card p-5">
           <summary className="cursor-pointer flex items-center gap-2 h2">
             <Plus className="w-4 h-4" /> Nova solicitação
@@ -48,9 +69,22 @@ export default function SolicitacoesPage() {
               </div>
               <div>
                 <label className="label">Loja</label>
-                <select name="loja_id" required className="input">
-                  {lojas.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}
-                </select>
+                {gerente ? (
+                  <>
+                    {/* Travado: gerente só pode pedir pra própria loja */}
+                    <input type="hidden" name="loja_id" value={user.loja_id ?? ''} />
+                    <input
+                      type="text"
+                      readOnly
+                      className="input bg-navy-50 cursor-not-allowed"
+                      value={lojaGerente?.nome ?? '—'}
+                    />
+                  </>
+                ) : (
+                  <select name="loja_id" required className="input">
+                    {lojas.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="label">Prioridade</label>
@@ -78,7 +112,11 @@ export default function SolicitacoesPage() {
           </form>
         </details>
 
-        <SolicitacoesList solicitacoes={solicitacoes} usersTime={usersTime} />
+        <SolicitacoesList
+          solicitacoes={solicitacoes}
+          usersTime={usersTime}
+          gerente={gerente}
+        />
       </main>
     </>
   );

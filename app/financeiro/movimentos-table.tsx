@@ -47,7 +47,7 @@ export default function MovimentosTable({
         pending={pending}
         label="lançamento"
       />
-      <div className="card overflow-hidden">
+      <div className="card overflow-x-auto">
         <div className="px-5 py-4 border-b border-line">
           <h2 className="h2">Lançamentos recentes</h2>
         </div>
@@ -111,14 +111,17 @@ export default function MovimentosTable({
                       <Link href={`/financeiro/${m.id}`} className="p-1 text-navy-500 hover:text-navy-900" title="Editar">
                         <Edit3 className="w-3.5 h-3.5" />
                       </Link>
-                      <form action={async () => {
-                        if (!confirm(`Excluir o lançamento "${m.descricao}"?`)) return;
-                        await deletarMovimentoInline(m.id);
-                      }}>
-                        <button title="Excluir" className="p-1 text-rose-500 hover:text-rose-700">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </form>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!confirm(`Excluir o lançamento "${m.descricao}"?`)) return;
+                          start(async () => { await deletarMovimentoInline(m.id); });
+                        }}
+                        title="Excluir"
+                        className="p-1 text-rose-500 hover:text-rose-700"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </td>
                 </tr>

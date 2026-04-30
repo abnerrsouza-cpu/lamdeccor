@@ -61,8 +61,8 @@ export default function FinanceiroPage() {
           </Link>
         }
       />
-      <main className="p-6 space-y-6">
-        <div className="grid grid-cols-4 gap-4">
+      <main className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <StatCard label="Saídas (acumulado)" value={fmtBRL(totalSaida)} icon={ArrowDownRight} />
           <StatCard label="Entradas atribuídas" value={fmtBRL(totalEntrada)} icon={ArrowUpRight} />
           <StatCard label="Saldo líquido" value={fmtBRL(saldo)} icon={Wallet} highlight={saldo > 0} />
@@ -71,7 +71,7 @@ export default function FinanceiroPage() {
             highlight={roi > 100} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
           {/* Pizza de saída */}
           <div className="card p-5">
             <h3 className="h2 mb-4">Saídas por categoria</h3>

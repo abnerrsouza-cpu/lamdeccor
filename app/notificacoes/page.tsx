@@ -42,7 +42,7 @@ export default async function NotificacoesPage() {
           </form>
         }
       />
-      <main className="p-6">
+      <main className="p-4 md:p-6">
         <div className="card divide-y divide-line">
           {lista.length === 0 && (
             <div className="p-8 text-center text-slate-muted">

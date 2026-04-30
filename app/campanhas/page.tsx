@@ -1,12 +1,16 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+import { podeEditar } from '@/lib/permissions';
 import { criarCampanha } from './actions';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, Eye } from 'lucide-react';
 import CampanhasList from './campanhas-list';
 import type { Campanha } from '@/lib/types';
 
-export default function CampanhasPage({ searchParams }: { searchParams: { aba?: string } }) {
+export default async function CampanhasPage({ searchParams }: { searchParams: { aba?: string } }) {
+  const user = await getCurrentUser();
+  const editar = podeEditar(user?.role);
   const db = getDb();
   const aba = searchParams.aba === 'arquivadas' ? 'arquivadas' : 'ativas';
 
@@ -21,8 +25,13 @@ export default function CampanhasPage({ searchParams }: { searchParams: { aba?: 
     <>
       <Topbar
         title="Campanhas publicitárias"
-        subtitle="Briefing por canal: Instagram, Meta Ads, Google, WhatsApp, RA, Influencers, GMN, Mídia OFF, Designer, Audiovisual e Dados."
+        subtitle={
+          editar
+            ? 'Briefing por canal: Instagram, Meta Ads, Google, WhatsApp, RA, Influencers, GMN, Mídia OFF, Designer, Audiovisual e Dados.'
+            : 'Acompanhe as campanhas em andamento. Para edições, fale com o time de marketing.'
+        }
         action={
+          editar ? (
           <details className="relative">
             <summary className="btn-primary list-none cursor-pointer">
               <Plus className="w-4 h-4" /> Nova campanha
@@ -59,9 +68,14 @@ export default function CampanhasPage({ searchParams }: { searchParams: { aba?: 
               <button type="submit" className="btn-primary w-full">Criar e abrir briefing</button>
             </form>
           </details>
+          ) : (
+            <span className="badge-blue flex items-center gap-1">
+              <Eye className="w-3 h-3" /> Modo visualização
+            </span>
+          )
         }
       />
-      <main className="p-6 space-y-5">
+      <main className="p-4 md:p-6 space-y-4 md:space-y-5">
         {/* Sub-abas */}
         <div className="inline-flex bg-navy-50 rounded-lg p-1">
           <Link
@@ -84,7 +98,7 @@ export default function CampanhasPage({ searchParams }: { searchParams: { aba?: 
           </Link>
         </div>
 
-        <CampanhasList campanhas={campanhas} arquivadas={aba === 'arquivadas'} />
+        <CampanhasList campanhas={campanhas} arquivadas={aba === 'arquivadas'} editar={editar} />
       </main>
     </>
   );

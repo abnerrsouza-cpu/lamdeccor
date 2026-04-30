@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Sidebar from '@/components/sidebar';
 import { seedIfEmpty } from '@/lib/seed';
@@ -10,6 +10,23 @@ seedIfEmpty();
 export const metadata: Metadata = {
   title: 'LAM Marketing Hub',
   description: 'Painel interno de marketing da LAM Deccor',
+  applicationName: 'LAM Hub',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'LAM Hub',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0F2A4A',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -26,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         ) : (
           <div className="min-h-screen bg-cream">
             <Sidebar user={{ nome: user.nome, cargo: user.cargo, role: user.role }} />
-            <div className="ml-60">{children}</div>
+            <div className="md:ml-60">{children}</div>
           </div>
         )}
       </body>

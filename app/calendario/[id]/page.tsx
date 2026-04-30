@@ -1,12 +1,16 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
+import { podeEditar } from '@/lib/permissions';
 import { atualizarEvento, deletarEvento } from '../actions';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, MapPin, Clock, Users, FileText, Trash2 } from 'lucide-react';
 import type { Evento, EventoConvidado, Loja, User } from '@/lib/types';
 
-export default function EventoDetail({ params }: { params: { id: string } }) {
+export default async function EventoDetail({ params }: { params: { id: string } }) {
+  const user = await getCurrentUser();
+  const editar = podeEditar(user?.role);
   const db = getDb();
   const id = Number(params.id);
   const ev = db.prepare(`
@@ -85,33 +89,41 @@ export default function EventoDetail({ params }: { params: { id: string } }) {
 
         <div className="card p-6">
           <h3 className="h2 mb-4 flex items-center gap-2"><FileText className="w-4 h-4" /> Ata da reunião</h3>
-          <form action={atualizarEvento.bind(null, id)} className="space-y-3">
-            <input type="hidden" name="titulo" value={ev.titulo} />
-            <input type="hidden" name="data" value={ev.data} />
-            <input type="hidden" name="hora_inicio" value={ev.hora_inicio ?? ''} />
-            <input type="hidden" name="hora_fim" value={ev.hora_fim ?? ''} />
-            <input type="hidden" name="tipo" value={ev.tipo} />
-            <input type="hidden" name="local" value={ev.local ?? ''} />
-            <input type="hidden" name="loja_id" value={ev.loja_id ?? ''} />
-            <input type="hidden" name="organizador_id" value={ev.organizador_id ?? ''} />
-            <input type="hidden" name="descricao" value={ev.descricao ?? ''} />
-            <input type="hidden" name="cor" value={ev.cor} />
-            <textarea
-              name="ata"
-              defaultValue={ev.ata}
-              rows={10}
-              className="input"
-              placeholder="Decisões, encaminhamentos, próximos passos..."
-            />
-            <button type="submit" className="btn-primary">Salvar ata</button>
-          </form>
+          {editar ? (
+            <form action={atualizarEvento.bind(null, id)} className="space-y-3">
+              <input type="hidden" name="titulo" value={ev.titulo} />
+              <input type="hidden" name="data" value={ev.data} />
+              <input type="hidden" name="hora_inicio" value={ev.hora_inicio ?? ''} />
+              <input type="hidden" name="hora_fim" value={ev.hora_fim ?? ''} />
+              <input type="hidden" name="tipo" value={ev.tipo} />
+              <input type="hidden" name="local" value={ev.local ?? ''} />
+              <input type="hidden" name="loja_id" value={ev.loja_id ?? ''} />
+              <input type="hidden" name="organizador_id" value={ev.organizador_id ?? ''} />
+              <input type="hidden" name="descricao" value={ev.descricao ?? ''} />
+              <input type="hidden" name="cor" value={ev.cor} />
+              <textarea
+                name="ata"
+                defaultValue={ev.ata}
+                rows={10}
+                className="input"
+                placeholder="Decisões, encaminhamentos, próximos passos..."
+              />
+              <button type="submit" className="btn-primary">Salvar ata</button>
+            </form>
+          ) : (
+            <div className="text-sm text-slate whitespace-pre-line bg-navy-50/30 p-4 rounded-lg">
+              {ev.ata || <span className="italic text-slate-muted">Ata ainda não preenchida.</span>}
+            </div>
+          )}
         </div>
 
-        <div className="flex justify-end">
-          <form action={deletarEvento.bind(null, id)}>
-            <button className="btn-danger"><Trash2 className="w-4 h-4" /> Excluir evento</button>
-          </form>
-        </div>
+        {editar && (
+          <div className="flex justify-end">
+            <form action={deletarEvento.bind(null, id)}>
+              <button className="btn-danger"><Trash2 className="w-4 h-4" /> Excluir evento</button>
+            </form>
+          </div>
+        )}
       </main>
     </>
   );

@@ -54,7 +54,7 @@ export default function InfluencersList({
         label="influencer"
       />
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {influencers.map((inf) => {
           const status = STATUS_LABEL[inf.status] ?? STATUS_LABEL.prospeccao;
           const initials = inf.nome.split(' ').slice(0, 2).map(n => n[0]).join('');
@@ -127,17 +127,17 @@ export default function InfluencersList({
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                 </Link>
-                <form action={async () => {
-                  if (!confirm(`Excluir o influencer "${inf.nome}"?`)) return;
-                  await deletarInfluencerInline(inf.id);
-                }}>
-                  <button
-                    title="Excluir"
-                    className="p-1.5 bg-white/90 hover:bg-white rounded text-rose-500 hover:text-rose-700 shadow-sm"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </form>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!confirm(`Excluir o influencer "${inf.nome}"?`)) return;
+                    start(async () => { await deletarInfluencerInline(inf.id); });
+                  }}
+                  title="Excluir"
+                  className="p-1.5 bg-white/90 hover:bg-white rounded text-rose-500 hover:text-rose-700 shadow-sm"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           );

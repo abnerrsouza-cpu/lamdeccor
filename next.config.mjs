@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // standalone: build minimalista que o Railway/Docker roda direto
-  output: 'standalone',
   experimental: {
     serverComponentsExternalPackages: ['better-sqlite3']
   },

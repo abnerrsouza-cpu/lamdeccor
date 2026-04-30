@@ -101,3 +101,22 @@ html, body {
   @page { margin: 1.5cm 1.5cm; size: A4; }
 }
 .print-only { display: none; }
+
+
+/* === Correção mobile: cards horizontais viram verticais === */
+@media (max-width: 640px) {
+    /* Cards com flex horizontal viram coluna */
+  .card.flex.items-start {
+        flex-direction: column !important;
+        align-items: stretch !important;
+  }
+    /* Botões com opacity-0 group-hover ficam visíveis em mobile */
+  [class*="opacity-0"][class*="group-hover"] {
+        opacity: 1 !important;
+  }
+    /* Coluna de ações ocupa largura cheia em mobile */
+  .card .shrink-0 {
+        width: 100%;
+        align-items: stretch;
+  }
+}

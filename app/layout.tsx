@@ -4,7 +4,7 @@ import Sidebar from '@/components/sidebar';
 import { seedIfEmpty } from '@/lib/seed';
 import { getCurrentUser } from '@/lib/auth';
 import { headers } from 'next/headers';
-
+export const dynamic = 'force-dynamic';
 seedIfEmpty();
 
 export const metadata: Metadata = {

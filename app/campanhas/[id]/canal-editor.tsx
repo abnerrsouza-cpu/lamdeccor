@@ -99,7 +99,7 @@ export default function CanalEditor({ canal, editar = true }: { canal: CampanhaC
               {canal.canal}
             </h4>
             {editar && (
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => setEditingTitulo(true)}
                   className="text-navy-500 hover:text-navy-700 hover:bg-navy-50 rounded p-1"

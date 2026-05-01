@@ -107,7 +107,7 @@ export default function MovimentosTable({
                     {m.tipo === 'saida' ? '−' : '+'}{fmtBRL(m.valor)}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                    <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100">
                       <Link href={`/financeiro/${m.id}`} className="p-1 text-navy-500 hover:text-navy-900" title="Editar">
                         <Edit3 className="w-3.5 h-3.5" />
                       </Link>

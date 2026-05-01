@@ -110,7 +110,7 @@ export default function UsersTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
+                    <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100">
                       <form action={alternarAtivo.bind(null, u.id, u.ativo ? 0 : 1)}>
                         <button className="text-xs text-navy-500 hover:underline">
                           {u.ativo ? 'desativar' : 'ativar'}

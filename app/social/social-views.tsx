@@ -135,7 +135,7 @@ function CardsView({ posts, selecionados, toggle }: {
               </div>
             </Link>
 
-            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100">
+            <div className="absolute top-2 right-2 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100">
               <Link href={`/social/${post.id}`} className="p-1.5 bg-white/90 hover:bg-white rounded text-navy-600 shadow-sm" title="Editar">
                 <Edit3 className="w-3.5 h-3.5" />
               </Link>
@@ -209,7 +209,7 @@ function ListaView({ posts, selecionados, toggle }: {
                 <td className="px-4 py-3 text-xs text-slate">{p.responsavel_nome ?? '—'}</td>
                 <td className="px-4 py-3"><span className={STATUS_BADGE[p.status]}>{p.status}</span></td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100">
                     <Link href={`/social/${p.id}`} className="p-1 text-navy-500" title="Editar">
                       <Edit3 className="w-3.5 h-3.5" />
                     </Link>

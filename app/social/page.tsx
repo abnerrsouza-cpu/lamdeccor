@@ -2,7 +2,7 @@ import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
 import Link from 'next/link';
 import SocialViews from './social-views';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import type { PostSocial } from '@/lib/types';
 
 export default function SocialPage() {
@@ -20,9 +20,14 @@ export default function SocialPage() {
         title="Social Media"
         subtitle="Planejamento de posts em todas as redes - calendário, lista e cards."
         action={
-          <Link href="/social/novo" className="btn-primary">
-            <Plus className="w-4 h-4" /> Novo post
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/social/importar" className="btn-secondary">
+              <Upload className="w-4 h-4" /> Importar PDF
+            </Link>
+            <Link href="/social/novo" className="btn-primary">
+              <Plus className="w-4 h-4" /> Novo post
+            </Link>
+          </div>
         }
       />
       <main className="p-4 md:p-6">

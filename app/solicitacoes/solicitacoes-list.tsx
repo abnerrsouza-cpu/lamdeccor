@@ -75,7 +75,7 @@ export default function SolicitacoesList({
           return (
             <div
               key={s.id}
-              className={`card p-5 flex items-start gap-4 group relative ${
+              className={`card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-start gap-4 group relative ${
                 isSel ? 'ring-2 ring-navy-500 ring-offset-2' : ''
               }`}
             >
@@ -83,28 +83,30 @@ export default function SolicitacoesList({
                 <CheckboxOverlay checked={isSel} onChange={() => toggle(s.id)} />
               )}
 
-              <div className={`w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center shrink-0 ${gerente ? '' : 'ml-6'}`}>
-                <Icon className="w-5 h-5 text-navy-700" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="badge-slate uppercase">{s.tipo}</span>
-                  <span className={STATUS_LABEL[s.status]}>{s.status.replace('_', ' ')}</span>
-                  <span className={PRIO_LABEL[s.prioridade]}>{s.prioridade}</span>
+              <div className="flex items-start gap-3 w-full sm:flex-1 min-w-0">
+                <div className={`w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center shrink-0 ${gerente ? '' : 'ml-6 sm:ml-6'}`}>
+                  <Icon className="w-5 h-5 text-navy-700" />
                 </div>
-                <h3 className="mt-2 text-base font-bold text-navy-900">{s.titulo}</h3>
-                {s.descricao && <p className="text-sm text-slate mt-1">{s.descricao}</p>}
-                <div className="mt-3 flex items-center gap-4 text-xs text-slate-muted flex-wrap">
-                  {s.loja_nome && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {s.loja_nome}</span>}
-                  {s.solicitante_nome && <span className="flex items-center gap-1"><UserIcon className="w-3 h-3" /> Solicitante: {s.solicitante_nome}</span>}
-                  {s.responsavel_nome && <span className="text-navy-700 font-semibold">Resp.: {s.responsavel_nome}</span>}
-                  {s.prazo && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {s.prazo}</span>}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="badge-slate uppercase">{s.tipo}</span>
+                    <span className={STATUS_LABEL[s.status]}>{s.status.replace('_', ' ')}</span>
+                    <span className={PRIO_LABEL[s.prioridade]}>{s.prioridade}</span>
+                  </div>
+                  <h3 className="mt-2 text-base font-bold text-navy-900 break-words">{s.titulo}</h3>
+                  {s.descricao && <p className="text-sm text-slate mt-1 break-words">{s.descricao}</p>}
+                  <div className="mt-3 flex items-center gap-x-4 gap-y-1 text-xs text-slate-muted flex-wrap">
+                    {s.loja_nome && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {s.loja_nome}</span>}
+                    {s.solicitante_nome && <span className="flex items-center gap-1"><UserIcon className="w-3 h-3" /> Solicitante: {s.solicitante_nome}</span>}
+                    {s.responsavel_nome && <span className="text-navy-700 font-semibold">Resp.: {s.responsavel_nome}</span>}
+                    {s.prazo && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {s.prazo}</span>}
+                  </div>
                 </div>
               </div>
 
               {gerente ? (
                 /* Visão do gerente: só leitura - mostra status atual */
-                <div className="flex flex-col items-end gap-1 shrink-0 text-xs">
+                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-1 sm:shrink-0 text-xs w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-line">
                   <span className="text-slate-muted">Status atual</span>
                   <span className={STATUS_LABEL[s.status] + ' text-sm'}>
                     {s.status.replace('_', ' ')}
@@ -112,17 +114,17 @@ export default function SolicitacoesList({
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
+                  <div className="flex flex-col items-stretch sm:items-end gap-2 w-full sm:w-auto sm:shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line">
                     <ResponsavelSelect
                       solicitacaoId={s.id}
                       responsavelAtual={s.responsavel_id}
                       users={usersTime}
                     />
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap">
                       {(['aberta', 'em_analise', 'em_execucao', 'concluida'] as const).map(st => (
                         <form key={st} action={atualizarStatus.bind(null, s.id, st)}>
                           <button className={
-                            'text-[10px] px-2 py-1 rounded font-semibold ' +
+                            'text-[10px] px-2 py-1 rounded font-semibold whitespace-nowrap ' +
                             (s.status === st ? 'bg-navy-800 text-white' : 'bg-navy-50 text-navy-700 hover:bg-navy-100')
                           }>
                             {st.replace('_', ' ')}
@@ -132,7 +134,7 @@ export default function SolicitacoesList({
                     </div>
                   </div>
 
-                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
                       onClick={() => {

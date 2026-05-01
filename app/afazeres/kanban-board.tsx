@@ -167,7 +167,7 @@ export default function KanbanBoard({ afazeres, users }: {
                         onClick={(e) => e.stopPropagation()}
                         className={clsx(
                           'absolute top-2 left-2 cursor-pointer transition-opacity',
-                          isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          isSelected ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
                         )}
                       >
                         <input

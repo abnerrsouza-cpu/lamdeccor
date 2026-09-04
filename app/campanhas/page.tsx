@@ -1,5 +1,6 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { podeEditar } from '@/lib/permissions';
 import { criarCampanha } from './actions';
@@ -12,14 +13,15 @@ export default async function CampanhasPage({ searchParams }: { searchParams: { 
   const user = await getCurrentUser();
   const editar = podeEditar(user?.role);
   const db = getDb();
+  const emp = await getEmpresaId();
   const aba = searchParams.aba === 'arquivadas' ? 'arquivadas' : 'ativas';
 
   const campanhas = db.prepare(`
-    SELECT * FROM campanhas WHERE arquivada = ? ORDER BY data_inicio DESC
-  `).all(aba === 'arquivadas' ? 1 : 0) as Campanha[];
+    SELECT * FROM campanhas WHERE arquivada = ? AND empresa_id = ? ORDER BY data_inicio DESC
+  `).all(aba === 'arquivadas' ? 1 : 0, emp) as Campanha[];
 
-  const totalAtivas = (db.prepare(`SELECT COUNT(*) as c FROM campanhas WHERE arquivada = 0`).get() as { c: number }).c;
-  const totalArq = (db.prepare(`SELECT COUNT(*) as c FROM campanhas WHERE arquivada = 1`).get() as { c: number }).c;
+  const totalAtivas = (db.prepare(`SELECT COUNT(*) as c FROM campanhas WHERE arquivada = 0 AND empresa_id = ?`).get(emp) as { c: number }).c;
+  const totalArq = (db.prepare(`SELECT COUNT(*) as c FROM campanhas WHERE arquivada = 1 AND empresa_id = ?`).get(emp) as { c: number }).c;
 
   return (
     <>

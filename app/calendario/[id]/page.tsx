@@ -1,5 +1,6 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { podeEditar } from '@/lib/permissions';
 import { atualizarEvento, deletarEvento } from '../actions';
@@ -12,14 +13,15 @@ export default async function EventoDetail({ params }: { params: { id: string } 
   const user = await getCurrentUser();
   const editar = podeEditar(user?.role);
   const db = getDb();
+  const emp = await getEmpresaId();
   const id = Number(params.id);
   const ev = db.prepare(`
     SELECT e.*, l.nome as loja_nome, u.nome as organizador_nome
     FROM eventos e
     LEFT JOIN lojas l ON l.id = e.loja_id
     LEFT JOIN users u ON u.id = e.organizador_id
-    WHERE e.id = ?
-  `).get(id) as (Evento & { loja_nome: string | null; organizador_nome: string | null }) | undefined;
+    WHERE e.id = ? AND e.empresa_id = ?
+  `).get(id, emp) as (Evento & { loja_nome: string | null; organizador_nome: string | null }) | undefined;
   if (!ev) notFound();
 
   const convidados = db.prepare(`
@@ -29,8 +31,8 @@ export default async function EventoDetail({ params }: { params: { id: string } 
     WHERE ec.evento_id = ?
   `).all(id) as any[];
 
-  const lojas = db.prepare('SELECT * FROM lojas ORDER BY nome').all() as Loja[];
-  const users = db.prepare('SELECT * FROM users WHERE ativo = 1 ORDER BY nome').all() as User[];
+  const lojas = db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[];
+  const users = db.prepare('SELECT * FROM users WHERE ativo = 1 AND empresa_id = ? ORDER BY nome').all(emp) as User[];
 
   return (
     <>

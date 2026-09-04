@@ -1,5 +1,6 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { podeEditar } from '@/lib/permissions';
 import { atualizarCampanha, deletarCampanha, adicionarCanal } from '../actions';
@@ -14,7 +15,9 @@ export default async function CampanhaDetail({ params }: { params: { id: string 
   const editar = podeEditar(user?.role);
   const db = getDb();
   const id = Number(params.id);
-  const c = db.prepare('SELECT * FROM campanhas WHERE id = ?').get(id) as Campanha | undefined;
+  const emp = await getEmpresaId();
+  const c = db.prepare('SELECT * FROM campanhas WHERE id = ? AND empresa_id = ?')
+    .get(id, emp) as Campanha | undefined;
   if (!c) notFound();
   const canais = db.prepare(
     `SELECT * FROM campanha_canais WHERE campanha_id = ? ORDER BY ordem ASC`

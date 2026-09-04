@@ -2,6 +2,7 @@ import Topbar from '@/components/topbar';
 import Link from 'next/link';
 import { ArrowLeft, Plug, CheckCircle2, ExternalLink } from 'lucide-react';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { conectarIntegracao, desconectarIntegracao } from './actions';
 import type { Integracao } from '@/lib/types';
 
@@ -56,9 +57,10 @@ const PLATAFORMAS = [
   },
 ];
 
-export default function IntegracoesPage() {
+export default async function IntegracoesPage() {
   const db = getDb();
-  const integracoes = db.prepare('SELECT * FROM integracoes').all() as Integracao[];
+  const emp = await getEmpresaId();
+  const integracoes = db.prepare('SELECT * FROM integracoes WHERE empresa_id = ?').all(emp) as Integracao[];
   const map: Record<string, Integracao> = {};
   integracoes.forEach(i => { map[i.plataforma] = i; });
 

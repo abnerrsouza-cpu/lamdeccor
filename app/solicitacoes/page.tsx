@@ -1,5 +1,6 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { ehGerente } from '@/lib/permissions';
 import { criarSolicitacao } from './actions';
@@ -11,6 +12,7 @@ export default async function SolicitacoesPage() {
   const user = await getCurrentUser();
   if (!user) return null;
   const db = getDb();
+  const emp = await getEmpresaId();
   const gerente = ehGerente(user.role);
 
   // Gerentes veem só solicitações da loja deles
@@ -27,13 +29,16 @@ export default async function SolicitacoesPage() {
       CASE s.prioridade WHEN 'urgente' THEN 1 WHEN 'alta' THEN 2 WHEN 'media' THEN 3 ELSE 4 END
   `;
   const solicitacoes = gerente && user.loja_id
-    ? db.prepare(`${queryBase} WHERE s.loja_id = ? ${orderBy}`).all(user.loja_id) as any[]
-    : db.prepare(`${queryBase} ${orderBy}`).all() as any[];
+    ? db.prepare(`${queryBase} WHERE s.empresa_id = ? AND s.loja_id = ? ${orderBy}`)
+        .all(emp, user.loja_id) as any[]
+    : db.prepare(`${queryBase} WHERE s.empresa_id = ? ${orderBy}`).all(emp) as any[];
 
-  const lojas = db.prepare('SELECT * FROM lojas ORDER BY nome').all() as Loja[];
+  const lojas = db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[];
   const usersTime = db.prepare(
-    `SELECT * FROM users WHERE role IN ('admin','coordenador','social_media','designer','gestor_trafego') AND ativo=1 ORDER BY nome`
-  ).all() as User[];
+    `SELECT * FROM users
+     WHERE role IN ('admin','coordenador','social_media','designer','gestor_trafego')
+       AND ativo=1 AND empresa_id = ? ORDER BY nome`
+  ).all(emp) as User[];
 
   // Loja pré-selecionada para gerente
   const lojaGerente = gerente ? lojas.find(l => l.id === user.loja_id) : null;

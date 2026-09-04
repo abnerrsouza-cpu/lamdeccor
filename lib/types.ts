@@ -2,8 +2,22 @@
 
 export type Role = 'admin' | 'diretor' | 'coordenador' | 'gestor_trafego' | 'social_media' | 'designer' | 'gerente_loja';
 
+export interface Empresa {
+  id: number;
+  nome: string;
+  slug: string;
+  subtitulo: string | null;
+  logo_url: string | null;
+  cor: string;
+  ativa: number;
+  ordem: number;
+}
+
 export interface User {
   id: number;
+  empresa_id: number;
+  /** 1 = pode alternar entre todas as empresas pelo seletor da sidebar */
+  acesso_global: number;
   nome: string;
   usuario: string;
   email: string;
@@ -19,6 +33,7 @@ export interface User {
 
 export interface Loja {
   id: number;
+  empresa_id: number;
   nome: string;
   cidade: string;
   endereco: string;
@@ -26,6 +41,7 @@ export interface Loja {
 
 export interface Notificacao {
   id: number;
+  empresa_id: number;
   user_id: number;
   titulo: string;
   mensagem: string;
@@ -203,5 +219,50 @@ export interface Afazer {
   ordem: number;
   checklist: string;
   anexos: string;
+  created_at: string;
+}
+
+export type ParceiroStatus = 'prospeccao' | 'em_negociacao' | 'ativo' | 'inativo';
+
+export interface Parceiro {
+  id: number;
+  empresa_id: number;
+  nome: string;
+  tipo: string | null;
+  responsavel: string | null;
+  telefone: string | null;
+  email: string | null;
+  instagram: string | null;
+  cidade: string | null;
+  endereco: string | null;
+  status: ParceiroStatus;
+  /** Data em que o parceiro passou a indicar de fato */
+  data_ativacao: string | null;
+  comissao_pct: number;
+  observacoes: string | null;
+  created_at: string;
+}
+
+export type IndicacaoStatus = 'nova' | 'em_contato' | 'agendada' | 'fechada' | 'perdida';
+
+export interface ParceiroIndicacao {
+  id: number;
+  parceiro_id: number;
+  cliente_nome: string;
+  cliente_contato: string | null;
+  servico: string | null;
+  data: string;
+  status: IndicacaoStatus;
+  valor: number;
+  observacoes: string | null;
+}
+
+export interface ParceiroConversa {
+  id: number;
+  parceiro_id: number;
+  data: string;
+  canal: string;
+  resumo: string | null;
+  autor_id: number | null;
   created_at: string;
 }

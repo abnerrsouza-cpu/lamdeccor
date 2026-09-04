@@ -1,4 +1,4 @@
-import { getDb } from './db';
+import { getDb, TABELAS_POR_EMPRESA, EMPRESA_LAM } from './db';
 
 /**
  * Popula o banco com dados de exemplo da LAM Deccor.
@@ -6,7 +6,9 @@ import { getDb } from './db';
  */
 export function seedIfEmpty() {
   const db = getDb();
-  const count = db.prepare('SELECT COUNT(*) as c FROM lojas').get() as { c: number };
+  // Checa users, não lojas: a criação do schema já insere a unidade da Higix,
+  // então lojas nunca está vazia num banco novo.
+  const count = db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number };
   if (count.c > 0) return;
 
   // ----- Lojas -----
@@ -413,4 +415,11 @@ As campanhas familiares terão como objetivo de impacto posicionamento a longo p
   insertNot.run(userIds.admin, 'Lembrete: gravação amanhã',
     'Início de captação na fábrica - 02/05 às 08:00.',
     'warning', '/calendario', 1);
+
+  // Todo o seed acima é dado da LAM. Em vez de repetir empresa_id em cada
+  // INSERT, carimba de uma vez só — a Higix nasce vazia, para ser preenchida.
+  for (const t of TABELAS_POR_EMPRESA) {
+    db.prepare(`UPDATE ${t} SET empresa_id = ? WHERE empresa_id IS NULL`).run(EMPRESA_LAM);
+  }
+  db.prepare(`UPDATE users SET acesso_global = 1 WHERE role IN ('admin', 'diretor')`).run();
 }

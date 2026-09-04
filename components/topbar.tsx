@@ -2,6 +2,7 @@ import { Bell, Search } from 'lucide-react';
 import Link from 'next/link';
 import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getEmpresaId } from '@/lib/empresa';
 
 export default async function Topbar({ title, subtitle, action }: {
   title: string;
@@ -10,8 +11,10 @@ export default async function Topbar({ title, subtitle, action }: {
 }) {
   const user = await getCurrentUser();
   const db = getDb();
+  const emp = await getEmpresaId();
   const naoLidas = user
-    ? (db.prepare('SELECT COUNT(*) as c FROM notificacoes WHERE user_id = ? AND lida = 0').get(user.id) as { c: number }).c
+    ? (db.prepare('SELECT COUNT(*) as c FROM notificacoes WHERE user_id = ? AND lida = 0 AND empresa_id = ?')
+        .get(user.id, emp) as { c: number }).c
     : 0;
 
   return (

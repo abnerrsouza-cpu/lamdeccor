@@ -3,23 +3,30 @@ import './globals.css';
 import Sidebar from '@/components/sidebar';
 import { seedIfEmpty } from '@/lib/seed';
 import { getCurrentUser } from '@/lib/auth';
+import { getEmpresaAtiva, listEmpresasDoUsuario } from '@/lib/empresa';
 import { headers } from 'next/headers';
 export const dynamic = 'force-dynamic';
 seedIfEmpty();
 
-export const metadata: Metadata = {
-  title: 'LAM Marketing Hub',
-  description: 'Painel interno de marketing da LAM Deccor',
-  applicationName: 'LAM Hub',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'LAM Hub',
-  },
-  formatDetection: {
-    telephone: false,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const user = await getCurrentUser();
+  const empresa = user ? await getEmpresaAtiva() : null;
+  const nome = empresa?.nome ?? 'LAM Deccor';
+  const curto = nome.split(' ')[0];
+  return {
+    title: `${nome} · Marketing Hub`,
+    description: `Painel interno de marketing da ${nome}`,
+    applicationName: `${curto} Hub`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: `${curto} Hub`,
+    },
+    formatDetection: {
+      telephone: false,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: '#0F2A4A',
@@ -34,6 +41,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const path = h.get('x-pathname') ?? '';
   const user = await getCurrentUser();
   const isLogin = path.startsWith('/login') || !user;
+  const empresaAtiva = isLogin ? null : await getEmpresaAtiva();
+  const empresas = isLogin ? [] : await listEmpresasDoUsuario();
 
   return (
     <html lang="pt-BR">
@@ -42,7 +51,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="min-h-screen bg-cream">{children}</div>
         ) : (
           <div className="min-h-screen bg-cream">
-            <Sidebar user={{ nome: user.nome, cargo: user.cargo, role: user.role }} />
+            <Sidebar
+              user={{ nome: user.nome, cargo: user.cargo, role: user.role }}
+              empresaAtiva={empresaAtiva!}
+              empresas={empresas}
+            />
             <div className="md:ml-60">{children}</div>
           </div>
         )}

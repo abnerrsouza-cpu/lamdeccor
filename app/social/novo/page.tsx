@@ -1,13 +1,15 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { criarPost } from '../actions';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import type { User } from '@/lib/types';
 
-export default function NovoPostPage() {
+export default async function NovoPostPage() {
   const db = getDb();
-  const users = db.prepare('SELECT * FROM users WHERE ativo=1 ORDER BY nome').all() as User[];
+  const emp = await getEmpresaId();
+  const users = db.prepare('SELECT * FROM users WHERE ativo=1 AND empresa_id = ? ORDER BY nome').all(emp) as User[];
   return (
     <>
       <Topbar title="Novo post" />

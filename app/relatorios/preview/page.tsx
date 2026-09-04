@@ -1,4 +1,5 @@
 import { getDb } from '@/lib/db';
+import { getEmpresaAtiva, type Empresa } from '@/lib/empresa';
 import PrintBar from './print-button';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -22,9 +23,11 @@ const fmtBRL = (n: number) =>
 
 const fmtNum = (n: number) => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
 
-export default function PreviewPage({ searchParams }: {
+export default async function PreviewPage({ searchParams }: {
   searchParams: { modulo?: string; nome?: string; inicio?: string; fim?: string };
 }) {
+  const empresa = await getEmpresaAtiva();
+  const emp = empresa.id;
   const modulo = searchParams.modulo ?? 'geral';
   const nome = searchParams.nome ?? 'Relatório';
   const inicio = searchParams.inicio || null;
@@ -37,12 +40,21 @@ export default function PreviewPage({ searchParams }: {
       <article className="report-page max-w-[210mm] mx-auto px-12 py-10 bg-white">
         {/* Cabeçalho */}
         <header className="border-b-2 border-navy-800 pb-5 mb-8 flex items-start gap-5">
-          <div className="w-20 h-20 rounded-full overflow-hidden shrink-0">
-            <Image src="/logo.jpg" alt="LAM Deccor" width={160} height={160} className="object-cover" />
-          </div>
+          {empresa.logo_url ? (
+            <div className="w-20 h-20 rounded-full overflow-hidden shrink-0">
+              <Image src={empresa.logo_url} alt={empresa.nome} width={160} height={160} className="object-cover" />
+            </div>
+          ) : (
+            <div
+              className="w-20 h-20 rounded-full shrink-0 flex items-center justify-center text-white text-xl font-bold"
+              style={{ backgroundColor: empresa.cor }}
+            >
+              {empresa.nome.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()}
+            </div>
+          )}
           <div className="flex-1">
             <p className="text-[11px] uppercase tracking-widest text-navy-500 font-bold">
-              LAM DECCOR · Marketing Hub
+              {empresa.nome.toUpperCase()} · {empresa.subtitulo ?? 'Marketing Hub'}
             </p>
             <h1 className="text-2xl font-bold text-navy-900 mt-1 leading-tight">{nome}</h1>
             <div className="mt-2 grid grid-cols-3 gap-3 text-xs">
@@ -67,19 +79,19 @@ export default function PreviewPage({ searchParams }: {
         </header>
 
         {/* Corpo do relatório */}
-        {modulo === 'geral' && <SecaoGeral inicio={inicio} fim={fim} />}
-        {modulo === 'afazeres' && <SecaoAfazeres inicio={inicio} fim={fim} />}
-        {modulo === 'campanhas' && <SecaoCampanhas inicio={inicio} fim={fim} />}
-        {modulo === 'influencers' && <SecaoInfluencers inicio={inicio} fim={fim} />}
-        {modulo === 'calendario' && <SecaoCalendario inicio={inicio} fim={fim} />}
-        {modulo === 'anuncios' && <SecaoAnuncios inicio={inicio} fim={fim} />}
-        {modulo === 'social' && <SecaoSocial inicio={inicio} fim={fim} />}
-        {modulo === 'financeiro' && <SecaoFinanceiro inicio={inicio} fim={fim} />}
-        {modulo === 'solicitacoes' && <SecaoSolicitacoes inicio={inicio} fim={fim} />}
-        {modulo === 'usuarios' && <SecaoUsuarios inicio={inicio} fim={fim} />}
+        {modulo === 'geral' && <SecaoGeral inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'afazeres' && <SecaoAfazeres inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'campanhas' && <SecaoCampanhas inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'influencers' && <SecaoInfluencers inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'calendario' && <SecaoCalendario inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'anuncios' && <SecaoAnuncios inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'social' && <SecaoSocial inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'financeiro' && <SecaoFinanceiro inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'solicitacoes' && <SecaoSolicitacoes inicio={inicio} fim={fim} emp={emp} />}
+        {modulo === 'usuarios' && <SecaoUsuarios inicio={inicio} fim={fim} emp={emp} />}
 
         <footer className="mt-12 pt-5 border-t border-line text-center text-xs text-slate-muted">
-          <p className="font-bold text-navy-700">LAM DECCOR · Da nossa fábrica para sua casa</p>
+          <p className="font-bold text-navy-700">{empresa.nome.toUpperCase()}</p>
           <p className="mt-1">Documento confidencial · Uso interno · {format(new Date(), 'yyyy')}</p>
         </footer>
       </article>
@@ -97,30 +109,37 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function rangeFilter(field: string, inicio: string | null, fim: string | null) {
-  const conds: string[] = [];
-  const params: any[] = [];
+/**
+ * Monta o WHERE do relatório. O filtro de empresa é sempre aplicado — nenhuma
+ * seção deve conseguir listar dados de outra empresa.
+ */
+function rangeFilter(
+  field: string, inicio: string | null, fim: string | null,
+  empField: string, emp: number
+) {
+  const conds: string[] = [`${empField} = ?`];
+  const params: any[] = [emp];
   if (inicio) { conds.push(`${field} >= ?`); params.push(inicio); }
   if (fim)    { conds.push(`${field} <= ?`); params.push(fim); }
-  return { where: conds.length ? `WHERE ${conds.join(' AND ')}` : '', params };
+  return { where: `WHERE ${conds.join(' AND ')}`, params };
 }
 
-function SecaoGeral({ inicio, fim }: { inicio: string | null; fim: string | null }) {
+function SecaoGeral({ inicio, fim, emp }: { inicio: string | null; fim: string | null; emp: number }) {
   return (
     <>
-      <SecaoFinanceiro inicio={inicio} fim={fim} compacto />
-      <SecaoAnuncios inicio={inicio} fim={fim} compacto />
-      <SecaoCampanhas inicio={inicio} fim={fim} compacto />
-      <SecaoInfluencers inicio={inicio} fim={fim} compacto />
-      <SecaoAfazeres inicio={inicio} fim={fim} compacto />
-      <SecaoSolicitacoes inicio={inicio} fim={fim} compacto />
+      <SecaoFinanceiro inicio={inicio} fim={fim} emp={emp} compacto />
+      <SecaoAnuncios inicio={inicio} fim={fim} emp={emp} compacto />
+      <SecaoCampanhas inicio={inicio} fim={fim} emp={emp} compacto />
+      <SecaoInfluencers inicio={inicio} fim={fim} emp={emp} compacto />
+      <SecaoAfazeres inicio={inicio} fim={fim} emp={emp} compacto />
+      <SecaoSolicitacoes inicio={inicio} fim={fim} emp={emp} compacto />
     </>
   );
 }
 
-function SecaoAfazeres({ inicio, fim, compacto = false }: any) {
+function SecaoAfazeres({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('a.created_at', inicio, fim);
+  const { where, params } = rangeFilter('a.created_at', inicio, fim, 'a.empresa_id', emp);
   const rows = db.prepare(`
     SELECT a.*, u.nome as resp
     FROM afazeres a
@@ -167,9 +186,9 @@ function SecaoAfazeres({ inicio, fim, compacto = false }: any) {
   );
 }
 
-function SecaoCampanhas({ inicio, fim, compacto = false }: any) {
+function SecaoCampanhas({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('data_inicio', inicio, fim);
+  const { where, params } = rangeFilter('data_inicio', inicio, fim, 'empresa_id', emp);
   const rows = db.prepare(`SELECT * FROM campanhas ${where} ORDER BY data_inicio DESC`).all(...params) as any[];
 
   return (
@@ -204,9 +223,9 @@ function SecaoCampanhas({ inicio, fim, compacto = false }: any) {
   );
 }
 
-function SecaoInfluencers({ inicio, fim, compacto = false }: any) {
+function SecaoInfluencers({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('i.created_at', inicio, fim);
+  const { where, params } = rangeFilter('i.created_at', inicio, fim, 'i.empresa_id', emp);
   const rows = db.prepare(`
     SELECT i.*, l.nome as loja_nome
     FROM influencers i
@@ -254,9 +273,9 @@ function SecaoInfluencers({ inicio, fim, compacto = false }: any) {
   );
 }
 
-function SecaoCalendario({ inicio, fim, compacto = false }: any) {
+function SecaoCalendario({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('data', inicio, fim);
+  const { where, params } = rangeFilter('data', inicio, fim, 'e.empresa_id', emp);
   const rows = db.prepare(`
     SELECT e.*, u.nome as organizador, l.nome as loja_nome,
       (SELECT COUNT(*) FROM evento_convidados WHERE evento_id = e.id) as convidados
@@ -301,9 +320,9 @@ function SecaoCalendario({ inicio, fim, compacto = false }: any) {
   );
 }
 
-function SecaoAnuncios({ inicio, fim, compacto = false }: any) {
+function SecaoAnuncios({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('data_inicio', inicio, fim);
+  const { where, params } = rangeFilter('data_inicio', inicio, fim, 'empresa_id', emp);
   const rows = db.prepare(`SELECT * FROM anuncios ${where} ORDER BY investimento DESC`).all(...params) as any[];
   const totalInvest = rows.reduce((s, r) => s + r.investimento, 0);
   const totalConv = rows.reduce((s, r) => s + r.conversoes, 0);
@@ -346,9 +365,9 @@ function SecaoAnuncios({ inicio, fim, compacto = false }: any) {
   );
 }
 
-function SecaoSocial({ inicio, fim, compacto = false }: any) {
+function SecaoSocial({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('data_publicacao', inicio, fim);
+  const { where, params } = rangeFilter('data_publicacao', inicio, fim, 'p.empresa_id', emp);
   const rows = db.prepare(`
     SELECT p.*, u.nome as resp
     FROM posts p LEFT JOIN users u ON u.id = p.responsavel_id
@@ -390,9 +409,9 @@ function SecaoSocial({ inicio, fim, compacto = false }: any) {
   );
 }
 
-function SecaoFinanceiro({ inicio, fim, compacto = false }: any) {
+function SecaoFinanceiro({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('data', inicio, fim);
+  const { where, params } = rangeFilter('data', inicio, fim, 'f.empresa_id', emp);
   const rows = db.prepare(`
     SELECT f.*, l.nome as loja_nome
     FROM financeiro f LEFT JOIN lojas l ON l.id = f.loja_id
@@ -449,9 +468,9 @@ function SecaoFinanceiro({ inicio, fim, compacto = false }: any) {
   );
 }
 
-function SecaoSolicitacoes({ inicio, fim, compacto = false }: any) {
+function SecaoSolicitacoes({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('s.created_at', inicio, fim);
+  const { where, params } = rangeFilter('s.created_at', inicio, fim, 's.empresa_id', emp);
   const rows = db.prepare(`
     SELECT s.*, l.nome as loja, u.nome as solicitante, r.nome as responsavel
     FROM solicitacoes s
@@ -498,9 +517,9 @@ function SecaoSolicitacoes({ inicio, fim, compacto = false }: any) {
   );
 }
 
-function SecaoUsuarios({ inicio, fim, compacto = false }: any) {
+function SecaoUsuarios({ inicio, fim, emp, compacto = false }: any) {
   const db = getDb();
-  const { where, params } = rangeFilter('u.created_at', inicio, fim);
+  const { where, params } = rangeFilter('u.created_at', inicio, fim, 'u.empresa_id', emp);
   const rows = db.prepare(`
     SELECT u.*, l.nome as loja_nome FROM users u
     LEFT JOIN lojas l ON l.id = u.loja_id

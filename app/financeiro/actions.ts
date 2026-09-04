@@ -3,13 +3,15 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 
 export async function criarMovimento(formData: FormData) {
   const db = getDb();
   const r = db.prepare(`
-    INSERT INTO financeiro (tipo, categoria, descricao, valor, data, campanha, loja_id, fornecedor, nf_numero, observacoes, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO financeiro (empresa_id, tipo, categoria, descricao, valor, data, campanha, loja_id, fornecedor, nf_numero, observacoes, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
+    await getEmpresaId(),
     String(formData.get('tipo') ?? 'saida'),
     String(formData.get('categoria') ?? ''),
     String(formData.get('descricao') ?? ''),
@@ -30,7 +32,7 @@ export async function atualizarMovimento(id: number, formData: FormData) {
   const db = getDb();
   db.prepare(`
     UPDATE financeiro SET tipo=?, categoria=?, descricao=?, valor=?, data=?, campanha=?, loja_id=?, fornecedor=?, nf_numero=?, observacoes=?, status=?
-    WHERE id=?
+    WHERE id=? AND empresa_id=?
   `).run(
     String(formData.get('tipo') ?? 'saida'),
     String(formData.get('categoria') ?? ''),
@@ -43,7 +45,8 @@ export async function atualizarMovimento(id: number, formData: FormData) {
     String(formData.get('nf_numero') ?? ''),
     String(formData.get('observacoes') ?? ''),
     String(formData.get('status') ?? 'pago'),
-    id
+    id,
+    await getEmpresaId()
   );
   revalidatePath(`/financeiro/${id}`);
   revalidatePath('/financeiro');
@@ -52,20 +55,21 @@ export async function atualizarMovimento(id: number, formData: FormData) {
 export async function uploadNF(id: number, formData: FormData) {
   const db = getDb();
   const url = String(formData.get('nf_arquivo') ?? '');
-  db.prepare('UPDATE financeiro SET nf_arquivo=? WHERE id=?').run(url, id);
+  db.prepare('UPDATE financeiro SET nf_arquivo=? WHERE id=? AND empresa_id=?')
+    .run(url, id, await getEmpresaId());
   revalidatePath(`/financeiro/${id}`);
 }
 
 export async function deletarMovimento(id: number) {
   const db = getDb();
-  db.prepare('DELETE FROM financeiro WHERE id = ?').run(id);
+  db.prepare('DELETE FROM financeiro WHERE id = ? AND empresa_id = ?').run(id, await getEmpresaId());
   revalidatePath('/financeiro');
   redirect('/financeiro');
 }
 
 export async function deletarMovimentoInline(id: number) {
   const db = getDb();
-  db.prepare('DELETE FROM financeiro WHERE id = ?').run(id);
+  db.prepare('DELETE FROM financeiro WHERE id = ? AND empresa_id = ?').run(id, await getEmpresaId());
   revalidatePath('/financeiro');
 }
 
@@ -73,6 +77,7 @@ export async function deletarMultiplosMovimentos(ids: number[]) {
   if (ids.length === 0) return;
   const db = getDb();
   const placeholders = ids.map(() => '?').join(',');
-  db.prepare(`DELETE FROM financeiro WHERE id IN (${placeholders})`).run(...ids);
+  db.prepare(`DELETE FROM financeiro WHERE empresa_id = ? AND id IN (${placeholders})`)
+    .run(await getEmpresaId(), ...ids);
   revalidatePath('/financeiro');
 }

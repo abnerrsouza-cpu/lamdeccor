@@ -2,13 +2,38 @@
 
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
+import { getCurrentUser } from '@/lib/auth';
+
+/** Só permite mexer em usuários que aparecem na empresa ativa. */
+async function visivelNaEmpresa(ids: number[]) {
+  if (ids.length === 0) return false;
+  const db = getDb();
+  const ph = ids.map(() => '?').join(',');
+  const n = (db.prepare(
+    `SELECT COUNT(*) as c FROM users
+     WHERE id IN (${ph}) AND (empresa_id = ? OR acesso_global = 1)`
+  ).get(...ids, await getEmpresaId()) as { c: number }).c;
+  return n === ids.length;
+}
 
 export async function criarUsuario(formData: FormData) {
   const db = getDb();
+  const atual = await getCurrentUser();
+  const empAtiva = await getEmpresaId();
+
+  // Só quem tem acesso global escolhe a empresa do novo usuário
+  const empresaId = atual?.acesso_global && formData.get('empresa_id')
+    ? Number(formData.get('empresa_id'))
+    : empAtiva;
+  const acessoGlobal = atual?.acesso_global && formData.get('acesso_global') ? 1 : 0;
+
   db.prepare(`
-    INSERT INTO users (nome, usuario, email, senha, role, hierarquia, cargo, loja_id, ativo)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    INSERT INTO users (empresa_id, acesso_global, nome, usuario, email, senha, role, hierarquia, cargo, loja_id, ativo)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
   `).run(
+    empresaId,
+    acessoGlobal,
     String(formData.get('nome') ?? ''),
     String(formData.get('usuario') ?? ''),
     String(formData.get('email') ?? ''),
@@ -23,7 +48,9 @@ export async function criarUsuario(formData: FormData) {
 
 export async function alternarAtivo(id: number, novoEstado: number) {
   const db = getDb();
-  db.prepare('UPDATE users SET ativo = ? WHERE id = ?').run(novoEstado, id);
+  db.prepare(
+    'UPDATE users SET ativo = ? WHERE id = ? AND (empresa_id = ? OR acesso_global = 1)'
+  ).run(novoEstado, id, await getEmpresaId());
   revalidatePath('/usuarios');
 }
 
@@ -54,6 +81,7 @@ function limparReferencias(db: ReturnType<typeof getDb>, ids: number[]) {
 
 export async function deletarUsuario(id: number) {
   const db = getDb();
+  if (!(await visivelNaEmpresa([id]))) return;
   const tx = db.transaction((id: number) => {
     limparReferencias(db, [id]);
     db.prepare('DELETE FROM users WHERE id = ?').run(id);
@@ -65,6 +93,7 @@ export async function deletarUsuario(id: number) {
 export async function deletarMultiplosUsuarios(ids: number[]) {
   if (ids.length === 0) return;
   const db = getDb();
+  if (!(await visivelNaEmpresa(ids))) return;
   const tx = db.transaction((ids: number[]) => {
     limparReferencias(db, ids);
     const placeholders = ids.map(() => '?').join(',');

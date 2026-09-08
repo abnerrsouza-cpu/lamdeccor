@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getDb, EMPRESA_LAM } from './db';
 import { getCurrentUser } from './auth';
+import { podeTrocarEmpresa } from './permissions';
 
 const EMPRESA_COOKIE = 'lam_empresa';
 
@@ -34,7 +35,7 @@ export async function listEmpresasDoUsuario(): Promise<Empresa[]> {
   const user = await getCurrentUser();
   if (!user) return [];
   const todas = await listEmpresas();
-  if (user.acesso_global) return todas;
+  if (podeTrocarEmpresa(user)) return todas;
   return todas.filter(e => e.id === (user.empresa_id ?? EMPRESA_LAM));
 }
 
@@ -45,7 +46,7 @@ export async function listEmpresasDoUsuario(): Promise<Empresa[]> {
 export async function getEmpresaId(): Promise<number> {
   const user = await getCurrentUser();
   const padrao = user?.empresa_id ?? EMPRESA_LAM;
-  if (!user?.acesso_global) return padrao;
+  if (!podeTrocarEmpresa(user)) return padrao;
 
   const escolhida = Number(cookies().get(EMPRESA_COOKIE)?.value);
   if (!escolhida) return padrao;

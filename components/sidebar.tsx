@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, KanbanSquare, Users, Calendar, Megaphone,
   Share2, Wallet, Inbox, Bell, Target, Shield, LogOut, FileText,
-  Menu, X, Handshake
+  Menu, X, Handshake, Settings
 } from 'lucide-react';
 import clsx from 'clsx';
 import EmpresaSwitcher from './empresa-switcher';
@@ -35,6 +35,7 @@ const NAV: Array<{
   { href: '/notificacoes', label: 'Notificações', icon: Bell, acesso: 'todos' },
   { href: '/relatorios', label: 'Relatórios', icon: FileText, acesso: 'staff' },
   { href: '/usuarios', label: 'Usuários', icon: Shield, acesso: 'admin' },
+  { href: '/configuracoes', label: 'Configurações', icon: Settings, acesso: 'admin' },
 ];
 
 function podeVer(acesso: RoleAccess, role: string) {

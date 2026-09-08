@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
+import { podeTrocarEmpresa } from '@/lib/permissions';
 
 /** Só permite mexer em usuários que aparecem na empresa ativa. */
 async function visivelNaEmpresa(ids: number[]) {
@@ -23,10 +24,10 @@ export async function criarUsuario(formData: FormData) {
   const empAtiva = await getEmpresaId();
 
   // Só quem tem acesso global escolhe a empresa do novo usuário
-  const empresaId = atual?.acesso_global && formData.get('empresa_id')
+  const empresaId = podeTrocarEmpresa(atual) && formData.get('empresa_id')
     ? Number(formData.get('empresa_id'))
     : empAtiva;
-  const acessoGlobal = atual?.acesso_global && formData.get('acesso_global') ? 1 : 0;
+  const acessoGlobal = podeTrocarEmpresa(atual) && formData.get('acesso_global') ? 1 : 0;
 
   db.prepare(`
     INSERT INTO users (empresa_id, acesso_global, nome, usuario, email, senha, role, hierarquia, cargo, loja_id, ativo)

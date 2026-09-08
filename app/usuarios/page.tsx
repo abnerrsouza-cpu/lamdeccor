@@ -2,6 +2,7 @@ import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
 import { getEmpresaId, listEmpresas } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
+import { podeTrocarEmpresa } from '@/lib/permissions';
 import { criarUsuario } from './actions';
 import UsersTable from './users-table';
 import { Plus, Eye, Clock } from 'lucide-react';
@@ -122,7 +123,7 @@ export default async function UsuariosPage() {
                 </select>
               </div>
             </div>
-            {atual?.acesso_global === 1 && (
+            {podeTrocarEmpresa(atual) && (
               <div className="grid grid-cols-2 gap-3 items-end">
                 <div>
                   <label className="label">Empresa</label>

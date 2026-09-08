@@ -15,8 +15,9 @@ let _db: Database.Database | null = null;
  * e o SQLite devolvia SQLITE_BUSY. Ao adicionar migração nova, incremente aqui.
  *   1 - multi-empresa (tabela empresas + empresa_id nas tabelas do hub)
  *   2 - módulo de parceiros (parceiros, indicações e conversas)
+ *   3 - nível 1 da hierarquia também alterna entre empresas
  */
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 export function getDb() {
   if (_db) return _db;
@@ -333,9 +334,10 @@ function ensureSchema(db: Database.Database) {
   for (const t of TABELAS_POR_EMPRESA) {
     db.prepare(`UPDATE ${t} SET empresa_id = ? WHERE empresa_id IS NULL`).run(EMPRESA_LAM);
   }
-  // Diretoria/admin nasce com acesso às duas empresas
+  // Diretoria/admin e todo o nível 1 da hierarquia acessam as duas empresas
   db.prepare(
-    `UPDATE users SET acesso_global = 1 WHERE role IN ('admin', 'diretor') AND acesso_global = 0`
+    `UPDATE users SET acesso_global = 1
+     WHERE (role IN ('admin', 'diretor') OR hierarquia = 1) AND acesso_global = 0`
   ).run();
 
   db.exec(`

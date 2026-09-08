@@ -115,7 +115,12 @@ export default function SolicitacoesList({
                   {s.descricao && <p className="text-sm text-slate mt-1 break-words">{s.descricao}</p>}
                   <div className="mt-3 flex items-center gap-x-4 gap-y-1 text-xs text-slate-muted flex-wrap">
                     {s.loja_nome && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {s.loja_nome}</span>}
-                    {s.solicitante_nome && <span className="flex items-center gap-1"><UserIcon className="w-3 h-3" /> Solicitante: {s.solicitante_nome}</span>}
+                    {/* Sempre visível: solicitante em branco indica problema de sessão */}
+                    <span className="flex items-center gap-1">
+                      <UserIcon className="w-3 h-3" />
+                      Solicitante:{' '}
+                      {s.solicitante_nome ?? <span className="italic text-slate-muted">não identificado</span>}
+                    </span>
                     {s.responsavel_nome && <span className="text-navy-700 font-semibold">Resp.: {s.responsavel_nome}</span>}
                     {s.prazo && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {s.prazo}</span>}
                   </div>

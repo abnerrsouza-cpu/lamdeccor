@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { MapPin, Phone, Mail, Edit3, Trash2, MessageCircle, Zap } from 'lucide-react';
-import SelectionBar, { CheckboxOverlay } from '@/components/selection-bar';
+import SelectionBar, { CheckboxOverlay, SelectAllToggle } from '@/components/selection-bar';
 import { deletarParceiroInline, deletarMultiplosParceiros } from './actions';
 import {
   STATUS_PARCEIRO, diasDesde, rotuloDias, fmtBRL, LIMITE_SEM_CONTATO,
@@ -31,6 +31,12 @@ export default function ParceirosList({
       return novo;
     });
 
+  const selecionarTodos = () => setSelecionados(new Set(parceiros.map(i => i.id)));
+  const alternarTodos = () => {
+    if (selecionados.size === parceiros.length) setSelecionados(new Set());
+    else selecionarTodos();
+  };
+
   const excluir = () => {
     if (!confirm(`Excluir ${selecionados.size} parceiro(s)? As indicações e conversas vão junto.`)) return;
     start(async () => {
@@ -48,7 +54,19 @@ export default function ParceirosList({
           onDelete={excluir}
           pending={pending}
           label="parceiro"
+          total={parceiros.length}
+          onSelectAll={selecionarTodos}
         />
+      )}
+
+      {editar && (
+        <div className="flex justify-end mb-3">
+          <SelectAllToggle
+            total={parceiros.length}
+            selecionados={selecionados.size}
+            onToggle={alternarTodos}
+          />
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { LayoutGrid, List, Calendar as CalendarIcon, Hash, Clock, Edit3, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
-import SelectionBar, { CheckboxOverlay } from '@/components/selection-bar';
+import SelectionBar, { CheckboxOverlay, SelectAllToggle } from '@/components/selection-bar';
 import { deletarPostInline, deletarMultiplosPosts } from './actions';
 import type { PostSocial } from '@/lib/types';
 
@@ -43,6 +43,15 @@ export default function SocialViews({ posts }: { posts: PostWithUser[] }) {
       return novo;
     });
 
+  const selecionarTodos = () => setSelecionados(new Set(posts.map(p => p.id)));
+  const todosSelecionados = posts.length > 0 && selecionados.size === posts.length;
+
+  /** Checkbox mestre da lista: marca tudo, ou limpa se já está tudo marcado. */
+  const alternarTodos = () => {
+    if (todosSelecionados) setSelecionados(new Set());
+    else selecionarTodos();
+  };
+
   const excluir = () => {
     if (!confirm(`Excluir ${selecionados.size} post(s)?`)) return;
     start(async () => {
@@ -59,6 +68,8 @@ export default function SocialViews({ posts }: { posts: PostWithUser[] }) {
         onDelete={excluir}
         pending={pending}
         label="post"
+        total={posts.length}
+        onSelectAll={selecionarTodos}
       />
 
       <div className="flex items-center justify-between mb-5">
@@ -67,11 +78,28 @@ export default function SocialViews({ posts }: { posts: PostWithUser[] }) {
           <ViewBtn active={view === 'lista'} onClick={() => setView('lista')} icon={List} label="Lista" />
           <ViewBtn active={view === 'calendario'} onClick={() => setView('calendario')} icon={CalendarIcon} label="Calendário" />
         </div>
-        <span className="text-xs text-slate-muted">{posts.length} posts</span>
+        <div className="flex items-center gap-4">
+          {view !== 'calendario' && (
+            <SelectAllToggle
+              total={posts.length}
+              selecionados={selecionados.size}
+              onToggle={alternarTodos}
+            />
+          )}
+          <span className="text-xs text-slate-muted">{posts.length} posts</span>
+        </div>
       </div>
 
       {view === 'cards' && <CardsView posts={posts} selecionados={selecionados} toggle={toggle} />}
-      {view === 'lista' && <ListaView posts={posts} selecionados={selecionados} toggle={toggle} />}
+      {view === 'lista' && (
+        <ListaView
+          posts={posts}
+          selecionados={selecionados}
+          toggle={toggle}
+          todosSelecionados={todosSelecionados}
+          alternarTodos={alternarTodos}
+        />
+      )}
       {view === 'calendario' && <CalendarioView posts={posts} ano={ano} mes={mes} setAno={setAno} setMes={setMes} />}
     </>
   );
@@ -158,18 +186,38 @@ function CardsView({ posts, selecionados, toggle }: {
   );
 }
 
-function ListaView({ posts, selecionados, toggle }: {
+function ListaView({ posts, selecionados, toggle, todosSelecionados, alternarTodos }: {
   posts: PostWithUser[];
   selecionados: Set<number>;
   toggle: (id: number) => void;
+  todosSelecionados: boolean;
+  alternarTodos: () => void;
 }) {
   const [, start] = useTransition();
+  const mestreRef = useRef<HTMLInputElement>(null);
+  // Estado "traço" quando a seleção é parcial
+  const parcial = selecionados.size > 0 && !todosSelecionados;
+  useEffect(() => {
+    if (mestreRef.current) mestreRef.current.indeterminate = parcial;
+  }, [parcial]);
+
   return (
     <div className="card overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-navy-50 text-navy-700">
           <tr>
-            <th className="px-3 py-2 w-8"></th>
+            <th className="px-3 py-2 w-8">
+              <input
+                ref={mestreRef}
+                type="checkbox"
+                checked={todosSelecionados}
+                onChange={alternarTodos}
+                disabled={posts.length === 0}
+                title={todosSelecionados ? 'Limpar seleção' : 'Selecionar todos'}
+                aria-label={todosSelecionados ? 'Limpar seleção' : 'Selecionar todos'}
+                className="cursor-pointer"
+              />
+            </th>
             <th className="px-4 py-2 text-left font-semibold">Data</th>
             <th className="px-4 py-2 text-left font-semibold">Rede</th>
             <th className="px-4 py-2 text-left font-semibold">Formato</th>

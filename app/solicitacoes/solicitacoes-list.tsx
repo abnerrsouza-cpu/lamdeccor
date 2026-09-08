@@ -5,7 +5,7 @@ import {
   atualizarStatus, deletarSolicitacao, deletarMultiplasSolicitacoes
 } from './actions';
 import ResponsavelSelect from './responsavel-select';
-import SelectionBar, { CheckboxOverlay } from '@/components/selection-bar';
+import SelectionBar, { CheckboxOverlay, SelectAllToggle } from '@/components/selection-bar';
 import {
   Trash2, Calendar, MapPin, User as UserIcon, Edit3,
   Image as ImageIcon, Megaphone, Video, FileText, Palette, Sparkles
@@ -48,6 +48,12 @@ export default function SolicitacoesList({
       return novo;
     });
 
+  const selecionarTodos = () => setSelecionados(new Set(solicitacoes.map(i => i.id)));
+  const alternarTodos = () => {
+    if (selecionados.size === solicitacoes.length) setSelecionados(new Set());
+    else selecionarTodos();
+  };
+
   const excluir = () => {
     if (!confirm(`Excluir ${selecionados.size} solicitação(ões)?`)) return;
     start(async () => {
@@ -65,7 +71,19 @@ export default function SolicitacoesList({
           onDelete={excluir}
           pending={pending}
           label="solicitação"
+          total={solicitacoes.length}
+          onSelectAll={selecionarTodos}
         />
+      )}
+
+      {!gerente && (
+        <div className="flex justify-end mb-3">
+          <SelectAllToggle
+            total={solicitacoes.length}
+            selecionados={selecionados.size}
+            onToggle={alternarTodos}
+          />
+        </div>
       )}
 
       <div className="space-y-3">

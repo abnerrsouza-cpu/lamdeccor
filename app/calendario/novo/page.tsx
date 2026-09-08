@@ -1,14 +1,16 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { criarEvento } from '../actions';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import type { Loja, User } from '@/lib/types';
 
-export default function NovoEventoPage() {
+export default async function NovoEventoPage() {
   const db = getDb();
-  const lojas = db.prepare('SELECT * FROM lojas ORDER BY nome').all() as Loja[];
-  const users = db.prepare('SELECT * FROM users WHERE ativo = 1 ORDER BY nome').all() as User[];
+  const emp = await getEmpresaId();
+  const lojas = db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[];
+  const users = db.prepare('SELECT * FROM users WHERE ativo = 1 AND empresa_id = ? ORDER BY nome').all(emp) as User[];
 
   return (
     <>

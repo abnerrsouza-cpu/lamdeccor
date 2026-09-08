@@ -20,6 +20,21 @@ npm run dev
 
 Abre em `http://localhost:3000`. Banco SQLite criado automaticamente em `./data/lam.db` com dados de exemplo.
 
+## Multi-empresa
+
+O hub atende duas empresas: **LAM Deccor** e **Higix — Lavagens Especiais**.
+
+- A empresa é escolhida **na tela de login** e trocada depois pelo **seletor no topo da sidebar**.
+- Cada empresa tem seus próprios dados: campanhas, afazeres, influencers, posts,
+  financeiro, solicitações, anúncios, integrações, calendário, lojas e usuários.
+- Cada usuário pertence a uma empresa (`users.empresa_id`). Só quem tem
+  `users.acesso_global = 1` (admin e diretor, por padrão) enxerga o seletor e
+  alterna entre as duas; os demais ficam presos à empresa da própria conta.
+- A empresa ativa vem de `lib/empresa.ts` → `getEmpresaId()`. **Toda consulta nova
+  precisa filtrar por `empresa_id`** — inclusive UPDATE e DELETE por id.
+- O schema é versionado por `PRAGMA user_version` em `lib/db.ts` (`SCHEMA_VERSION`).
+  Ao adicionar migração, incremente a constante.
+
 ## Módulos
 
 | Módulo | Descrição |
@@ -35,6 +50,10 @@ Abre em `http://localhost:3000`. Banco SQLite criado automaticamente em `./data/
 | **Solicitações** | Gerentes de loja abrem pedidos tipados (post, anúncio, vídeo, panfleto, arte, evento). Atribuição de responsável e mudança rápida de status |
 | **Notificações** | Central de notificações + dropdown na topbar |
 | **Usuários** | Cadastro com hierarquia (1 admin → 9 visualizador), monitoramento de acessos |
+| **Parceiros** *(só Higix)* | Rede de parceiros que indicam clientes: card com contato, indicações e conversão, histórico de conversas e data de ativação. Marca em amarelo o parceiro ativo sem contato há 30+ dias |
+
+> Módulos exclusivos de uma empresa ficam em `lib/modulos.ts` (`MODULOS_EXCLUSIVOS`).
+> O mesmo mapa esconde o item na sidebar, bloqueia a rota e barra as server actions.
 
 ## Estrutura
 

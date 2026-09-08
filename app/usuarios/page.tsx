@@ -1,5 +1,7 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId, listEmpresas } from '@/lib/empresa';
+import { getCurrentUser } from '@/lib/auth';
 import { criarUsuario } from './actions';
 import UsersTable from './users-table';
 import { Plus, Eye, Clock } from 'lucide-react';
@@ -26,25 +28,30 @@ const ROLE_BADGE: Record<string, string> = {
   gerente_loja: 'badge-slate',
 };
 
-export default function UsuariosPage() {
+export default async function UsuariosPage() {
   const db = getDb();
+  const emp = await getEmpresaId();
+  const atual = await getCurrentUser();
+  const empresas = await listEmpresas();
   const users = db.prepare(`
     SELECT u.*, l.nome as loja_nome
     FROM users u
     LEFT JOIN lojas l ON l.id = u.loja_id
+    WHERE u.empresa_id = ? OR u.acesso_global = 1
     ORDER BY u.hierarquia ASC, u.nome ASC
-  `).all() as (User & { loja_nome: string | null })[];
+  `).all(emp) as (User & { loja_nome: string | null })[];
 
-  const lojas = db.prepare('SELECT * FROM lojas ORDER BY nome').all() as Loja[];
+  const lojas = db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[];
 
   // Logs de acesso recentes
   const logs = db.prepare(`
     SELECT al.*, u.nome as user_nome
     FROM acessos_log al
     LEFT JOIN users u ON u.id = al.user_id
+    WHERE u.empresa_id = ? OR u.acesso_global = 1
     ORDER BY al.created_at DESC
     LIMIT 10
-  `).all() as any[];
+  `).all(emp) as any[];
 
   return (
     <>
@@ -115,6 +122,20 @@ export default function UsuariosPage() {
                 </select>
               </div>
             </div>
+            {atual?.acesso_global === 1 && (
+              <div className="grid grid-cols-2 gap-3 items-end">
+                <div>
+                  <label className="label">Empresa</label>
+                  <select name="empresa_id" defaultValue={emp} className="input">
+                    {empresas.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 text-sm text-slate pb-2.5">
+                  <input type="checkbox" name="acesso_global" value="1" className="w-4 h-4" />
+                  Pode alternar entre todas as empresas
+                </label>
+              </div>
+            )}
             <button type="submit" className="btn-primary">Cadastrar usuário</button>
           </form>
         </details>

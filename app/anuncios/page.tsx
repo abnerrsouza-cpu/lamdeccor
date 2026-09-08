@@ -1,5 +1,6 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import Link from 'next/link';
 import {
   Megaphone, MousePointerClick, TrendingUp, Eye, Plug,
@@ -19,21 +20,24 @@ const PLATAFORMAS = [
 // Ticket médio LAM (estimativa do plano de marketing) para cálculo de retorno
 const TICKET_MEDIO = 3200;
 
-export default function AnunciosPage({ searchParams }: { searchParams: { plataforma?: string } }) {
+export default async function AnunciosPage({ searchParams }: { searchParams: { plataforma?: string } }) {
   const db = getDb();
+  const emp = await getEmpresaId();
   const plataforma = PLATAFORMAS.find(p => p.id === searchParams.plataforma) ?? PLATAFORMAS[0];
 
   const anuncios = db.prepare(`
-    SELECT * FROM anuncios WHERE plataforma = ? ORDER BY status='ativo' DESC, investimento DESC
-  `).all(plataforma.id) as Anuncio[];
+    SELECT * FROM anuncios WHERE plataforma = ? AND empresa_id = ?
+    ORDER BY status='ativo' DESC, investimento DESC
+  `).all(plataforma.id, emp) as Anuncio[];
 
   // Contagens para mostrar nas abas
   const counts: Record<string, number> = {};
   PLATAFORMAS.forEach(p => {
-    counts[p.id] = (db.prepare('SELECT COUNT(*) as c FROM anuncios WHERE plataforma = ?').get(p.id) as { c: number }).c;
+    counts[p.id] = (db.prepare('SELECT COUNT(*) as c FROM anuncios WHERE plataforma = ? AND empresa_id = ?')
+      .get(p.id, emp) as { c: number }).c;
   });
 
-  const integ = db.prepare('SELECT * FROM integracoes').all() as Integracao[];
+  const integ = db.prepare('SELECT * FROM integracoes WHERE empresa_id = ?').all(emp) as Integracao[];
   const conectadas = integ.filter(i => i.conectado === 1).length;
   const integPlat = integ.find(i =>
     i.plataforma === `${plataforma.id}_ads` ||

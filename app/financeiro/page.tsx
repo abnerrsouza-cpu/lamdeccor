@@ -1,5 +1,6 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import Link from 'next/link';
 import StatCard from '@/components/stat-card';
 import PieChart from './pie-chart';
@@ -7,14 +8,16 @@ import MovimentosTable from './movimentos-table';
 import { Plus, Wallet, TrendingUp, ArrowDownRight, ArrowUpRight, FileText } from 'lucide-react';
 import type { MovimentoFinanceiro } from '@/lib/types';
 
-export default function FinanceiroPage() {
+export default async function FinanceiroPage() {
   const db = getDb();
+  const emp = await getEmpresaId();
   const movs = db.prepare(`
     SELECT f.*, l.nome as loja_nome
     FROM financeiro f
     LEFT JOIN lojas l ON l.id = f.loja_id
+    WHERE f.empresa_id = ?
     ORDER BY f.data DESC
-  `).all() as (MovimentoFinanceiro & { loja_nome: string | null })[];
+  `).all(emp) as (MovimentoFinanceiro & { loja_nome: string | null })[];
 
   const totalSaida = movs.filter(m => m.tipo === 'saida').reduce((s, m) => s + m.valor, 0);
   const totalEntrada = movs.filter(m => m.tipo === 'entrada').reduce((s, m) => s + m.valor, 0);

@@ -1,13 +1,15 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { criarMovimento } from '../actions';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import type { Loja } from '@/lib/types';
 
-export default function NovoMovimentoPage() {
+export default async function NovoMovimentoPage() {
   const db = getDb();
-  const lojas = db.prepare('SELECT * FROM lojas ORDER BY nome').all() as Loja[];
+  const emp = await getEmpresaId();
+  const lojas = db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[];
 
   return (
     <>

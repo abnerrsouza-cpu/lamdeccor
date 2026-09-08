@@ -3,14 +3,16 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { extrairPostsDoPdf, type PostExtraido } from '@/lib/pdf-importer';
 
 export async function criarPost(formData: FormData) {
   const db = getDb();
   const r = db.prepare(`
-    INSERT INTO posts (titulo, texto, rede, formato, status, data_publicacao, hora, responsavel_id, campanha, hashtags, midia_url, observacoes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO posts (empresa_id, titulo, texto, rede, formato, status, data_publicacao, hora, responsavel_id, campanha, hashtags, midia_url, observacoes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
+    await getEmpresaId(),
     String(formData.get('titulo') ?? ''),
     String(formData.get('texto') ?? ''),
     String(formData.get('rede') ?? 'instagram'),
@@ -32,7 +34,7 @@ export async function atualizarPost(id: number, formData: FormData) {
   const db = getDb();
   db.prepare(`
     UPDATE posts SET titulo=?, texto=?, rede=?, formato=?, status=?, data_publicacao=?, hora=?, responsavel_id=?, campanha=?, hashtags=?, midia_url=?, observacoes=?
-    WHERE id=?
+    WHERE id=? AND empresa_id=?
   `).run(
     String(formData.get('titulo') ?? ''),
     String(formData.get('texto') ?? ''),
@@ -46,7 +48,8 @@ export async function atualizarPost(id: number, formData: FormData) {
     String(formData.get('hashtags') ?? ''),
     String(formData.get('midia_url') ?? ''),
     String(formData.get('observacoes') ?? ''),
-    id
+    id,
+    await getEmpresaId()
   );
   revalidatePath(`/social/${id}`);
   revalidatePath('/social');
@@ -54,14 +57,14 @@ export async function atualizarPost(id: number, formData: FormData) {
 
 export async function deletarPost(id: number) {
   const db = getDb();
-  db.prepare('DELETE FROM posts WHERE id = ?').run(id);
+  db.prepare('DELETE FROM posts WHERE id = ? AND empresa_id = ?').run(id, await getEmpresaId());
   revalidatePath('/social');
   redirect('/social');
 }
 
 export async function deletarPostInline(id: number) {
   const db = getDb();
-  db.prepare('DELETE FROM posts WHERE id = ?').run(id);
+  db.prepare('DELETE FROM posts WHERE id = ? AND empresa_id = ?').run(id, await getEmpresaId());
   revalidatePath('/social');
 }
 
@@ -69,7 +72,8 @@ export async function deletarMultiplosPosts(ids: number[]) {
   if (ids.length === 0) return;
   const db = getDb();
   const placeholders = ids.map(() => '?').join(',');
-  db.prepare(`DELETE FROM posts WHERE id IN (${placeholders})`).run(...ids);
+  db.prepare(`DELETE FROM posts WHERE empresa_id = ? AND id IN (${placeholders})`)
+    .run(await getEmpresaId(), ...ids);
   revalidatePath('/social');
 }
 
@@ -119,14 +123,16 @@ export async function criarPostsEmLote(posts: PostExtraido[]): Promise<{
   }
   try {
     const db = getDb();
+    const emp = await getEmpresaId();
     const stmt = db.prepare(`
-      INSERT INTO posts (titulo, texto, rede, formato, status, data_publicacao, hora, campanha, observacoes)
-      VALUES (?, ?, 'instagram', ?, 'rascunho', ?, NULL, ?, ?)
+      INSERT INTO posts (empresa_id, titulo, texto, rede, formato, status, data_publicacao, hora, campanha, observacoes)
+      VALUES (?, ?, ?, 'instagram', ?, 'rascunho', ?, NULL, ?, ?)
     `);
     const tx = db.transaction((rows: PostExtraido[]) => {
       let count = 0;
       for (const p of rows) {
         stmt.run(
+          emp,
           p.titulo,
           p.descricao || '',
           p.formato,

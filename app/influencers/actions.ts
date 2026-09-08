@@ -3,17 +3,26 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
+
+/** Impede que uma empresa altere redes/campanhas de influencer de outra. */
+async function ehDaEmpresa(influencerId: number) {
+  const db = getDb();
+  return !!db.prepare('SELECT id FROM influencers WHERE id = ? AND empresa_id = ?')
+    .get(influencerId, await getEmpresaId());
+}
 
 export async function criarInfluencer(formData: FormData) {
   const db = getDb();
   const result = db.prepare(`
     INSERT INTO influencers (
-      nome, handle, cidade, loja_id, perfil,
+      empresa_id, nome, handle, cidade, loja_id, perfil,
       alcance_medio, engajamento, cache_mensal, bonus_pct,
       status, observacoes, avatar_url,
       valor_acordo, acordo_inicio, acordo_fim
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
+    await getEmpresaId(),
     String(formData.get('nome') ?? ''),
     String(formData.get('handle') ?? ''),
     String(formData.get('cidade') ?? ''),
@@ -42,7 +51,7 @@ export async function atualizarInfluencer(id: number, formData: FormData) {
       alcance_medio=?, engajamento=?, cache_mensal=?, bonus_pct=?,
       status=?, observacoes=?, avatar_url=?,
       valor_acordo=?, acordo_inicio=?, acordo_fim=?
-    WHERE id = ?
+    WHERE id = ? AND empresa_id = ?
   `).run(
     String(formData.get('nome') ?? ''),
     String(formData.get('handle') ?? ''),
@@ -59,7 +68,8 @@ export async function atualizarInfluencer(id: number, formData: FormData) {
     Number(formData.get('valor_acordo') ?? 0),
     String(formData.get('acordo_inicio') ?? '') || null,
     String(formData.get('acordo_fim') ?? '') || null,
-    id
+    id,
+    await getEmpresaId()
   );
   revalidatePath(`/influencers/${id}`);
   revalidatePath('/influencers');
@@ -67,6 +77,7 @@ export async function atualizarInfluencer(id: number, formData: FormData) {
 
 export async function adicionarRede(influencerId: number, formData: FormData) {
   const db = getDb();
+  if (!(await ehDaEmpresa(influencerId))) return;
   db.prepare(`
     INSERT INTO influencer_redes (influencer_id, rede, url, seguidores, engajamento)
     VALUES (?, ?, ?, ?, ?)
@@ -82,12 +93,14 @@ export async function adicionarRede(influencerId: number, formData: FormData) {
 
 export async function removerRede(redeId: number, influencerId: number) {
   const db = getDb();
-  db.prepare('DELETE FROM influencer_redes WHERE id = ?').run(redeId);
+  if (!(await ehDaEmpresa(influencerId))) return;
+  db.prepare('DELETE FROM influencer_redes WHERE id = ? AND influencer_id = ?').run(redeId, influencerId);
   revalidatePath(`/influencers/${influencerId}`);
 }
 
 export async function adicionarCampanha(influencerId: number, formData: FormData) {
   const db = getDb();
+  if (!(await ehDaEmpresa(influencerId))) return;
   db.prepare(`
     INSERT INTO influencer_campanhas (
       influencer_id, campanha_nome, data_inicio, data_fim,
@@ -109,14 +122,14 @@ export async function adicionarCampanha(influencerId: number, formData: FormData
 
 export async function deletarInfluencer(id: number) {
   const db = getDb();
-  db.prepare('DELETE FROM influencers WHERE id = ?').run(id);
+  db.prepare('DELETE FROM influencers WHERE id = ? AND empresa_id = ?').run(id, await getEmpresaId());
   revalidatePath('/influencers');
   redirect('/influencers');
 }
 
 export async function deletarInfluencerInline(id: number) {
   const db = getDb();
-  db.prepare('DELETE FROM influencers WHERE id = ?').run(id);
+  db.prepare('DELETE FROM influencers WHERE id = ? AND empresa_id = ?').run(id, await getEmpresaId());
   revalidatePath('/influencers');
 }
 
@@ -124,6 +137,7 @@ export async function deletarMultiplosInfluencers(ids: number[]) {
   if (ids.length === 0) return;
   const db = getDb();
   const placeholders = ids.map(() => '?').join(',');
-  db.prepare(`DELETE FROM influencers WHERE id IN (${placeholders})`).run(...ids);
+  db.prepare(`DELETE FROM influencers WHERE empresa_id = ? AND id IN (${placeholders})`)
+    .run(await getEmpresaId(), ...ids);
   revalidatePath('/influencers');
 }

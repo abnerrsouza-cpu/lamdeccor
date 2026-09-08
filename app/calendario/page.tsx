@@ -1,5 +1,6 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { podeEditar } from '@/lib/permissions';
 import CalendarioGrid from './calendario-grid';
@@ -13,6 +14,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: {
   const user = await getCurrentUser();
   const editar = podeEditar(user?.role);
   const db = getDb();
+  const emp = await getEmpresaId();
   const hoje = new Date();
   const ano = Number(searchParams.ano ?? hoje.getFullYear());
   const mes = Number(searchParams.mes ?? hoje.getMonth() + 1);
@@ -23,8 +25,8 @@ export default async function CalendarioPage({ searchParams }: { searchParams: {
   const fim = `${proximoAno}-${String(proximoMes).padStart(2, '0')}-01`;
 
   const eventos = db.prepare(`
-    SELECT * FROM eventos WHERE data >= ? AND data < ? ORDER BY data, hora_inicio
-  `).all(inicio, fim) as Evento[];
+    SELECT * FROM eventos WHERE data >= ? AND data < ? AND empresa_id = ? ORDER BY data, hora_inicio
+  `).all(inicio, fim, emp) as Evento[];
 
   // Próximos 6 eventos a partir de hoje (qualquer mês)
   const proximos = db.prepare(`
@@ -33,10 +35,10 @@ export default async function CalendarioPage({ searchParams }: { searchParams: {
     FROM eventos e
     LEFT JOIN lojas l ON l.id = e.loja_id
     LEFT JOIN users u ON u.id = e.organizador_id
-    WHERE e.data >= date('now')
+    WHERE e.data >= date('now') AND e.empresa_id = ?
     ORDER BY e.data ASC, e.hora_inicio ASC
     LIMIT 6
-  `).all() as (Evento & { loja_nome: string | null; organizador_nome: string | null; total_convidados: number })[];
+  `).all(emp) as (Evento & { loja_nome: string | null; organizador_nome: string | null; total_convidados: number })[];
 
   const fmtRelativo = (data: string) => {
     const d = new Date(data);

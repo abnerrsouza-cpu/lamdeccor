@@ -1,5 +1,6 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { marcarLida, marcarTodasLidas } from './actions';
 import Link from 'next/link';
@@ -25,9 +26,12 @@ export default async function NotificacoesPage() {
   const user = await getCurrentUser();
   if (!user) return null;
   const db = getDb();
+  const emp = await getEmpresaId();
   const lista = db.prepare(`
-    SELECT * FROM notificacoes WHERE user_id = ? ORDER BY lida ASC, created_at DESC
-  `).all(user.id) as Notificacao[];
+    SELECT * FROM notificacoes
+    WHERE user_id = ? AND empresa_id = ?
+    ORDER BY lida ASC, created_at DESC
+  `).all(user.id, emp) as Notificacao[];
 
   return (
     <>

@@ -1,22 +1,24 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { atualizarMovimento, deletarMovimento, uploadNF } from '../actions';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Trash2, FileText, Upload, ExternalLink } from 'lucide-react';
 import type { MovimentoFinanceiro, Loja } from '@/lib/types';
 
-export default function MovimentoDetail({ params }: { params: { id: string } }) {
+export default async function MovimentoDetail({ params }: { params: { id: string } }) {
   const db = getDb();
+  const emp = await getEmpresaId();
   const id = Number(params.id);
   const m = db.prepare(`
     SELECT f.*, l.nome as loja_nome
     FROM financeiro f
     LEFT JOIN lojas l ON l.id = f.loja_id
-    WHERE f.id = ?
-  `).get(id) as (MovimentoFinanceiro & { loja_nome: string | null }) | undefined;
+    WHERE f.id = ? AND f.empresa_id = ?
+  `).get(id, emp) as (MovimentoFinanceiro & { loja_nome: string | null }) | undefined;
   if (!m) notFound();
-  const lojas = db.prepare('SELECT * FROM lojas ORDER BY nome').all() as Loja[];
+  const lojas = db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[];
 
   const fmtBRL = (n: number) =>
     n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });

@@ -1,22 +1,24 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { atualizarPost, deletarPost } from '../actions';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Trash2, Calendar, Clock, User as UserIcon, Hash } from 'lucide-react';
 import type { PostSocial, User } from '@/lib/types';
 
-export default function PostDetail({ params }: { params: { id: string } }) {
+export default async function PostDetail({ params }: { params: { id: string } }) {
   const db = getDb();
+  const emp = await getEmpresaId();
   const id = Number(params.id);
   const post = db.prepare(`
     SELECT p.*, u.nome as responsavel_nome
     FROM posts p
     LEFT JOIN users u ON u.id = p.responsavel_id
-    WHERE p.id = ?
-  `).get(id) as (PostSocial & { responsavel_nome: string | null }) | undefined;
+    WHERE p.id = ? AND p.empresa_id = ?
+  `).get(id, emp) as (PostSocial & { responsavel_nome: string | null }) | undefined;
   if (!post) notFound();
-  const users = db.prepare('SELECT * FROM users WHERE ativo=1 ORDER BY nome').all() as User[];
+  const users = db.prepare('SELECT * FROM users WHERE ativo=1 AND empresa_id = ? ORDER BY nome').all(emp) as User[];
 
   return (
     <>

@@ -1,13 +1,15 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaId } from '@/lib/empresa';
 import { criarInfluencer } from '../actions';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import type { Loja } from '@/lib/types';
 
-export default function NovoInfluencerPage() {
+export default async function NovoInfluencerPage() {
   const db = getDb();
-  const lojas = db.prepare('SELECT * FROM lojas ORDER BY nome').all() as Loja[];
+  const emp = await getEmpresaId();
+  const lojas = db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[];
 
   return (
     <>
@@ -41,7 +43,7 @@ export default function NovoInfluencerPage() {
               <input name="cidade" className="input" />
             </div>
             <div>
-              <label className="label">Loja LAM associada</label>
+              <label className="label">Loja / unidade associada</label>
               <select name="loja_id" className="input">
                 <option value="">— Sem associação —</option>
                 {lojas.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}

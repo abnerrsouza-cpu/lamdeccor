@@ -1,15 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, KanbanSquare, Users, Calendar, Megaphone,
   Share2, Wallet, Inbox, Bell, Target, Shield, LogOut, FileText,
-  Menu, X
+  Menu, X, Handshake
 } from 'lucide-react';
 import clsx from 'clsx';
+import EmpresaSwitcher from './empresa-switcher';
+import { moduloVisivel } from '@/lib/modulos';
+import type { Empresa } from '@/lib/empresa';
 
 type RoleAccess = 'todos' | 'staff' | 'admin';
 
@@ -23,6 +25,7 @@ const NAV: Array<{
   { href: '/', label: 'Dashboard', icon: LayoutDashboard, acesso: 'todos' },
   { href: '/afazeres', label: 'Afazeres', icon: KanbanSquare, acesso: 'staff' },
   { href: '/influencers', label: 'Influencers', icon: Users, acesso: 'staff' },
+  { href: '/parceiros', label: 'Parceiros', icon: Handshake, acesso: 'staff' },
   { href: '/campanhas', label: 'Campanhas', icon: Target, highlight: true, acesso: 'todos' },
   { href: '/calendario', label: 'Calendário', icon: Calendar, acesso: 'todos' },
   { href: '/anuncios', label: 'Anúncios', icon: Megaphone, acesso: 'staff' },
@@ -41,11 +44,17 @@ function podeVer(acesso: RoleAccess, role: string) {
   return true;
 }
 
-export default function Sidebar({ user }: { user: { nome: string; cargo: string | null; role: string } }) {
+export default function Sidebar({ user, empresaAtiva, empresas }: {
+  user: { nome: string; cargo: string | null; role: string };
+  empresaAtiva: Empresa;
+  empresas: Empresa[];
+}) {
   const pathname = usePathname();
   const [openMobile, setOpenMobile] = useState(false);
   const initials = user.nome.split(' ').slice(0, 2).map(n => n[0]).join('');
-  const items = NAV.filter(item => podeVer(item.acesso, user.role));
+  const items = NAV.filter(item =>
+    podeVer(item.acesso, user.role) && moduloVisivel(item.href, empresaAtiva.slug)
+  );
 
   // Fecha o drawer ao trocar de rota
   useEffect(() => { setOpenMobile(false); }, [pathname]);
@@ -83,25 +92,8 @@ export default function Sidebar({ user }: { user: { nome: string; cargo: string 
           openMobile ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
-        <div className="px-5 py-5 border-b border-navy-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-white shrink-0 ring-1 ring-navy-700">
-              <Image
-                src="/logo.jpg"
-                alt="LAM Deccor"
-                width={80}
-                height={80}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
-            <div>
-              <div className="text-base font-bold leading-none">LAM Deccor</div>
-              <div className="text-[10px] text-navy-300 uppercase tracking-wider mt-1">
-                Marketing Hub
-              </div>
-            </div>
-          </div>
+        <div className="px-3.5 py-5 border-b border-navy-800 flex items-center justify-between gap-1">
+          <EmpresaSwitcher ativa={empresaAtiva} empresas={empresas} />
           {/* Botão fechar no mobile */}
           <button
             onClick={() => setOpenMobile(false)}

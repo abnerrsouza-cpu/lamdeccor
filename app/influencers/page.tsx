@@ -1,20 +1,28 @@
 import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
+import { getEmpresaAtiva } from '@/lib/empresa';
 import Link from 'next/link';
 import { Plus, Eye, Users, Heart } from 'lucide-react';
 import InfluencersList from './influencers-list';
 import type { Influencer, InfluencerRede } from '@/lib/types';
 
-export default function InfluencersPage() {
+export default async function InfluencersPage() {
   const db = getDb();
+  const empresa = await getEmpresaAtiva();
+  const emp = empresa.id;
   const influencers = db.prepare(`
     SELECT i.*, l.nome as loja_nome
     FROM influencers i
     LEFT JOIN lojas l ON l.id = i.loja_id
+    WHERE i.empresa_id = ?
     ORDER BY i.status = 'ativo' DESC, i.alcance_medio DESC
-  `).all() as (Influencer & { loja_nome: string | null })[];
+  `).all(emp) as (Influencer & { loja_nome: string | null })[];
 
-  const redesAll = db.prepare(`SELECT * FROM influencer_redes`).all() as InfluencerRede[];
+  const redesAll = db.prepare(`
+    SELECT r.* FROM influencer_redes r
+    JOIN influencers i ON i.id = r.influencer_id
+    WHERE i.empresa_id = ?
+  `).all(emp) as InfluencerRede[];
   const redesByInf: Record<number, InfluencerRede[]> = {};
   redesAll.forEach(r => {
     if (!redesByInf[r.influencer_id]) redesByInf[r.influencer_id] = [];
@@ -34,7 +42,7 @@ export default function InfluencersPage() {
     <>
       <Topbar
         title="Central de Influencers"
-        subtitle="Rede de influencers regionais da LAM Deccor."
+        subtitle={`Rede de influencers regionais da ${empresa.nome}.`}
         action={
           <Link href="/influencers/novo" className="btn-primary">
             <Plus className="w-4 h-4" /> Novo

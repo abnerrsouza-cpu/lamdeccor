@@ -2,6 +2,7 @@ import Topbar from '@/components/topbar';
 import StatCard from '@/components/stat-card';
 import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { getEmpresaAtiva } from '@/lib/empresa';
 import {
   Wallet, Users, Megaphone, TrendingUp,
   Calendar as CalendarIcon, AlertCircle, ArrowRight, Target
@@ -12,47 +13,71 @@ import { ptBR } from 'date-fns/locale';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
+  const empresa = await getEmpresaAtiva();
+  const emp = empresa.id;
   const db = getDb();
 
   const totalSaida = (db.prepare(
-    `SELECT COALESCE(SUM(valor),0) as v FROM financeiro WHERE tipo='saida'`
-  ).get() as { v: number }).v;
+    `SELECT COALESCE(SUM(valor),0) as v FROM financeiro WHERE tipo='saida' AND empresa_id = ?`
+  ).get(emp) as { v: number }).v;
   const totalEntrada = (db.prepare(
-    `SELECT COALESCE(SUM(valor),0) as v FROM financeiro WHERE tipo='entrada'`
-  ).get() as { v: number }).v;
+    `SELECT COALESCE(SUM(valor),0) as v FROM financeiro WHERE tipo='entrada' AND empresa_id = ?`
+  ).get(emp) as { v: number }).v;
   const roi = totalSaida > 0 ? ((totalEntrada / totalSaida - 1) * 100) : 0;
 
   const adsAtivos = (db.prepare(
-    `SELECT COUNT(*) as c FROM anuncios WHERE status='ativo'`
-  ).get() as { c: number }).c;
+    `SELECT COUNT(*) as c FROM anuncios WHERE status='ativo' AND empresa_id = ?`
+  ).get(emp) as { c: number }).c;
   const totalConversoes = (db.prepare(
-    `SELECT COALESCE(SUM(conversoes),0) as v FROM anuncios`
-  ).get() as { v: number }).v;
+    `SELECT COALESCE(SUM(conversoes),0) as v FROM anuncios WHERE empresa_id = ?`
+  ).get(emp) as { v: number }).v;
   const infsAtivos = (db.prepare(
-    `SELECT COUNT(*) as c FROM influencers WHERE status='ativo'`
-  ).get() as { c: number }).c;
+    `SELECT COUNT(*) as c FROM influencers WHERE status='ativo' AND empresa_id = ?`
+  ).get(emp) as { c: number }).c;
 
   const proximosEventos = db.prepare(`
-    SELECT * FROM eventos WHERE data >= date('now') ORDER BY data ASC LIMIT 5
-  `).all() as any[];
+    SELECT * FROM eventos WHERE data >= date('now') AND empresa_id = ? ORDER BY data ASC LIMIT 5
+  `).all(emp) as any[];
 
   const solicitacoesAbertas = db.prepare(`
     SELECT s.*, l.nome as loja_nome
     FROM solicitacoes s
     LEFT JOIN lojas l ON l.id = s.loja_id
-    WHERE s.status IN ('aberta', 'em_analise')
+    WHERE s.status IN ('aberta', 'em_analise') AND s.empresa_id = ?
     ORDER BY
       CASE s.prioridade WHEN 'urgente' THEN 1 WHEN 'alta' THEN 2 WHEN 'media' THEN 3 ELSE 4 END
     LIMIT 5
-  `).all() as any[];
+  `).all(emp) as any[];
 
   const afazeresAndamento = db.prepare(`
-    SELECT * FROM afazeres WHERE coluna='em_andamento' ORDER BY ordem ASC LIMIT 4
-  `).all() as any[];
+    SELECT * FROM afazeres WHERE coluna='em_andamento' AND empresa_id = ? ORDER BY ordem ASC LIMIT 4
+  `).all(emp) as any[];
 
   const campanhasAtivas = db.prepare(`
-    SELECT * FROM campanhas WHERE status IN ('em_execucao', 'planejamento') ORDER BY data_inicio LIMIT 3
-  `).all() as any[];
+    SELECT * FROM campanhas
+    WHERE status IN ('em_execucao', 'planejamento') AND arquivada = 0 AND empresa_id = ?
+    ORDER BY data_inicio LIMIT 3
+  `).all(emp) as any[];
+
+  // Alerta da próxima campanha a estrear (antes era um texto fixo da LAM)
+  const proximaCampanha = db.prepare(`
+    SELECT * FROM campanhas
+    WHERE empresa_id = ? AND arquivada = 0 AND data_inicio IS NOT NULL AND data_inicio >= date('now')
+    ORDER BY data_inicio ASC LIMIT 1
+  `).get(emp) as any | undefined;
+
+  // 'YYYY-MM-DD' vira meia-noite UTC no construtor do Date e volta um dia no
+  // fuso de Brasília; por isso a data é montada localmente.
+  const dataLocal = (iso: string) => {
+    const [a, m, d] = iso.split('-').map(Number);
+    return new Date(a, m - 1, d);
+  };
+
+  const diasParaCampanha = proximaCampanha
+    ? Math.round(
+        (dataLocal(proximaCampanha.data_inicio).getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000
+      )
+    : null;
 
   const fmtBRL = (n: number) =>
     n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
@@ -63,33 +88,41 @@ export default async function DashboardPage() {
     <>
       <Topbar
         title={`Bom dia, ${primeiroNome}.`}
-        subtitle="Aqui está o panorama do marketing da LAM hoje."
+        subtitle={`Aqui está o panorama do marketing da ${empresa.nome} hoje.`}
       />
 
       <main className="p-4 md:p-6 space-y-4 md:space-y-5">
-        {/* Alerta destaque */}
-        <div className="card p-5 border-amber-200 bg-gradient-to-r from-amber-50 to-white">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5 text-amber-700" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-navy-900">
-                  Campanha "Hora da mãe descansar" começa em 15 dias
-                </h3>
-                <span className="badge-gold">URGENTE</span>
+        {/* Alerta da próxima campanha */}
+        {proximaCampanha && (
+          <div className="card p-5 border-amber-200 bg-gradient-to-r from-amber-50 to-white">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-amber-700" />
               </div>
-              <p className="text-sm text-slate mt-1">
-                Dia das Mães é em <strong>10/05/2026</strong>. Filme emocional em briefing,
-                influencers selecionados, combo Mãe na Sala disponível em todas as 5 lojas.
-              </p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-navy-900">
+                    Campanha "{proximaCampanha.nome}"{' '}
+                    {diasParaCampanha === 0
+                      ? 'começa hoje'
+                      : `começa em ${diasParaCampanha} ${diasParaCampanha === 1 ? 'dia' : 'dias'}`}
+                  </h3>
+                  {diasParaCampanha !== null && diasParaCampanha <= 15 && (
+                    <span className="badge-gold">URGENTE</span>
+                  )}
+                </div>
+                <p className="text-sm text-slate mt-1">
+                  Início em{' '}
+                  <strong>{format(dataLocal(proximaCampanha.data_inicio), 'dd/MM/yyyy')}</strong>.
+                  {proximaCampanha.slogan ? ` ${proximaCampanha.slogan}` : ''}
+                </p>
+              </div>
+              <Link href={`/campanhas/${proximaCampanha.id}`} className="btn-primary">
+                Ver campanha <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
-            <Link href="/campanhas" className="btn-primary">
-              Ver campanha <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
-        </div>
+        )}
 
         {/* KPIs */}
         <div>
@@ -101,7 +134,8 @@ export default async function DashboardPage() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <StatCard label="Investimento total" value={fmtBRL(totalSaida)} icon={Wallet} helper="Saídas acumuladas" />
-            <StatCard label="Vendas atribuídas" value={fmtBRL(totalEntrada)} icon={TrendingUp} change={{ pct: 24, up: true }} />
+            <StatCard label="Vendas atribuídas" value={fmtBRL(totalEntrada)} icon={TrendingUp}
+              helper="Entradas acumuladas" />
             <StatCard label="ROI estimado" value={`${roi.toFixed(0)}%`} icon={TrendingUp}
               helper={roi > 0 ? 'Investimento se pagou' : 'Avaliar'} highlight={roi > 100} />
             <StatCard label="Anúncios ativos" value={String(adsAtivos)} icon={Megaphone}

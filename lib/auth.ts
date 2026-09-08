@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getDb } from './db';
+import { podeTrocarEmpresa } from './permissions';
 import { revalidatePath } from 'next/cache';
 
 const SESSION_COOKIE = 'lam_session';
@@ -34,7 +35,7 @@ export async function login(formData: FormData) {
     .get(escolhida) as { id: number; nome: string } | undefined;
 
   if (!empresa) return erroLogin('Empresa inválida.');
-  if (!user.acesso_global && empresa.id !== user.empresa_id) {
+  if (!podeTrocarEmpresa(user) && empresa.id !== user.empresa_id) {
     return erroLogin(`Sua conta não tem acesso à ${empresa.nome}.`);
   }
 

@@ -81,10 +81,6 @@ export default function LoginForm({ empresas, erro }: { empresas: Empresa[]; err
         {erro && <p className="text-sm text-rose-600">{erro}</p>}
         <button type="submit" className="btn-primary w-full">Entrar</button>
       </form>
-
-      <div className="mt-6 pt-6 border-t border-line text-xs text-slate-muted text-center">
-        <p><strong className="text-navy-700">Demo:</strong> usuário <code className="bg-navy-50 px-1.5 py-0.5 rounded">admin</code> / senha <code className="bg-navy-50 px-1.5 py-0.5 rounded">admin123</code></p>
-      </div>
     </div>
   );
 }

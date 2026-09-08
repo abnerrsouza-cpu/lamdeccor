@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Calendar, DollarSign, Edit3, Archive, ArchiveRestore, Trash2
 } from 'lucide-react';
-import SelectionBar, { CheckboxOverlay } from '@/components/selection-bar';
+import SelectionBar, { CheckboxOverlay, SelectAllToggle } from '@/components/selection-bar';
 import {
   arquivarCampanha, desarquivarCampanha,
   deletarCampanhaInline, deletarMultiplasCampanhas
@@ -35,6 +35,12 @@ export default function CampanhasList({
       novo.has(id) ? novo.delete(id) : novo.add(id);
       return novo;
     });
+
+  const selecionarTodos = () => setSelecionados(new Set(campanhas.map(i => i.id)));
+  const alternarTodos = () => {
+    if (selecionados.size === campanhas.length) setSelecionados(new Set());
+    else selecionarTodos();
+  };
 
   const excluir = () => {
     if (!confirm(`Excluir ${selecionados.size} campanha(s)? Esta ação não pode ser desfeita.`)) return;
@@ -68,7 +74,19 @@ export default function CampanhasList({
           onDelete={excluir}
           pending={pending}
           label="campanha"
+          total={campanhas.length}
+          onSelectAll={selecionarTodos}
         />
+      )}
+
+      {editar && (
+        <div className="flex justify-end mb-3">
+          <SelectAllToggle
+            total={campanhas.length}
+            selecionados={selecionados.size}
+            onToggle={alternarTodos}
+          />
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

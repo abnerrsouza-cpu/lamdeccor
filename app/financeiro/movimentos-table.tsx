@@ -46,6 +46,8 @@ export default function MovimentosTable({
         onDelete={excluir}
         pending={pending}
         label="lançamento"
+        total={movs.length}
+        onSelectAll={() => setSelecionados(new Set(movs.map(m => m.id)))}
       />
       <div className="card overflow-x-auto">
         <div className="px-5 py-4 border-b border-line">

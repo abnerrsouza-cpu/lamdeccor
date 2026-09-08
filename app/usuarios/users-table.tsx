@@ -52,6 +52,8 @@ export default function UsersTable({
         onDelete={excluir}
         pending={pending}
         label="usuário"
+        total={users.length}
+        onSelectAll={() => setSelecionados(new Set(users.map(u => u.id)))}
       />
       <div className="card overflow-x-auto">
         <div className="px-5 py-4 border-b border-line flex items-center justify-between">

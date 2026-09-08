@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { MapPin, Calendar, Edit3, Trash2 } from 'lucide-react';
-import SelectionBar, { CheckboxOverlay } from '@/components/selection-bar';
+import SelectionBar, { CheckboxOverlay, SelectAllToggle } from '@/components/selection-bar';
 import { deletarInfluencerInline, deletarMultiplosInfluencers } from './actions';
 import type { Influencer, InfluencerRede } from '@/lib/types';
 
@@ -32,6 +32,12 @@ export default function InfluencersList({
       return novo;
     });
 
+  const selecionarTodos = () => setSelecionados(new Set(influencers.map(i => i.id)));
+  const alternarTodos = () => {
+    if (selecionados.size === influencers.length) setSelecionados(new Set());
+    else selecionarTodos();
+  };
+
   const excluir = () => {
     if (!confirm(`Excluir ${selecionados.size} influencer(es)?`)) return;
     start(async () => {
@@ -52,7 +58,17 @@ export default function InfluencersList({
         onDelete={excluir}
         pending={pending}
         label="influencer"
+        total={influencers.length}
+        onSelectAll={selecionarTodos}
       />
+
+      <div className="flex justify-end mb-3">
+        <SelectAllToggle
+          total={influencers.length}
+          selecionados={selecionados.size}
+          onToggle={alternarTodos}
+        />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {influencers.map((inf) => {

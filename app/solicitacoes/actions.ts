@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
@@ -10,10 +11,14 @@ export async function criarSolicitacao(formData: FormData) {
   const emp = await getEmpresaId();
   const user = await getCurrentUser();
 
+  // Sem sessão não dá para saber quem pediu; melhor recusar do que gravar
+  // uma solicitação órfã que ninguém consegue rastrear depois.
+  if (!user) redirect('/login');
+
   // SEGURANÇA: gerente de loja só pode criar para a própria loja
   // (independente do que vier no formulário)
   const lojaIdInformada = Number(formData.get('loja_id') ?? 1);
-  const lojaId = user?.role === 'gerente_loja' && user.loja_id
+  const lojaId = user.role === 'gerente_loja' && user.loja_id
     ? user.loja_id
     : lojaIdInformada;
 
@@ -26,7 +31,7 @@ export async function criarSolicitacao(formData: FormData) {
     String(formData.get('titulo') ?? ''),
     String(formData.get('descricao') ?? ''),
     lojaId,
-    user?.id ?? null,
+    user.id,
     String(formData.get('prioridade') ?? 'media'),
     String(formData.get('prazo') ?? '') || null
   );

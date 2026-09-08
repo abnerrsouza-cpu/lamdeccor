@@ -59,7 +59,7 @@ export default async function SolicitacoesPage() {
             <Plus className="w-4 h-4" /> Nova solicitação
           </summary>
           <form action={criarSolicitacao} className="mt-5 space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
                 <label className="label">Tipo de pedido</label>
                 <select name="tipo" required className="input">
@@ -90,6 +90,17 @@ export default async function SolicitacoesPage() {
                     {lojas.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}
                   </select>
                 )}
+              </div>
+              <div>
+                <label className="label">Solicitante</label>
+                {/* Travado: quem abre é sempre o usuário logado (lido da sessão) */}
+                <input
+                  type="text"
+                  readOnly
+                  className="input bg-navy-50 cursor-not-allowed"
+                  value={user.nome}
+                  title="Registrado automaticamente a partir do seu login"
+                />
               </div>
               <div>
                 <label className="label">Prioridade</label>

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Trash2, Shield } from 'lucide-react';
+import { Trash2, Shield, ChevronDown, Clock } from 'lucide-react';
 import SelectionBar from '@/components/selection-bar';
 import { alternarAtivo, deletarUsuario, deletarMultiplosUsuarios } from './actions';
-import type { User } from '@/lib/types';
+import LiberarAcesso from './liberar-acesso';
+import type { User, Loja, Empresa } from '@/lib/types';
 
 const HIERARQUIA_LABEL: Record<number, string> = {
   1: 'Admin', 2: 'Coordenação', 3: 'Gestão', 4: 'Liderança',
@@ -16,11 +17,17 @@ const ROLE_BADGE: Record<string, string> = {
   designer: 'badge-purple', gerente_loja: 'badge-slate',
 };
 
+type Linha = User & { loja_nome: string | null };
+
 export default function UsersTable({
-  users
+  users, lojas, empresas, podeMoverEmpresa,
 }: {
-  users: (User & { loja_nome: string | null })[];
+  users: Linha[];
+  lojas: Loja[];
+  empresas: Empresa[];
+  podeMoverEmpresa: boolean;
 }) {
+  const [expandido, setExpandido] = useState<number | null>(null);
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
   const [pending, start] = useTransition();
 
@@ -107,12 +114,26 @@ export default function UsersTable({
                   </td>
                   <td className="px-4 py-3 text-slate">{u.loja_nome ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <span className={u.ativo ? 'badge-green' : 'badge-slate'}>
-                      {u.ativo ? 'ativo' : 'inativo'}
-                    </span>
+                    {u.ativo ? (
+                      <span className="badge-green">ativo</span>
+                    ) : (
+                      <span className="badge-gold flex items-center gap-1 w-fit">
+                        <Clock className="w-3 h-3" /> aguardando liberação
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setExpandido(expandido === u.id ? null : u.id)}
+                        className={`text-xs hover:underline flex items-center gap-1 ${
+                          u.ativo ? 'text-navy-500' : 'text-gold-deep font-semibold'
+                        }`}
+                      >
+                        {u.ativo ? 'acesso' : 'liberar'}
+                        <ChevronDown className={`w-3 h-3 transition-transform ${expandido === u.id ? 'rotate-180' : ''}`} />
+                      </button>
                       <form action={alternarAtivo.bind(null, u.id, u.ativo ? 0 : 1)}>
                         <button className="text-xs text-navy-500 hover:underline">
                           {u.ativo ? 'desativar' : 'ativar'}
@@ -132,6 +153,22 @@ export default function UsersTable({
                   </td>
                 </tr>
               );
+            }).flatMap((linha, i) => {
+              const u = users[i];
+              if (expandido !== u.id) return [linha];
+              return [
+                linha,
+                <tr key={`${u.id}-acesso`} className="bg-navy-50/20">
+                  <td colSpan={8} className="px-4 pb-4">
+                    <LiberarAcesso
+                      user={u}
+                      lojas={lojas}
+                      empresas={empresas}
+                      podeMoverEmpresa={podeMoverEmpresa}
+                    />
+                  </td>
+                </tr>,
+              ];
             })}
           </tbody>
         </table>

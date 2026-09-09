@@ -6,6 +6,8 @@ import { podeTrocarEmpresa } from '@/lib/permissions';
 import { criarUsuario } from './actions';
 import UsersTable from './users-table';
 import { Plus, Eye, Clock } from 'lucide-react';
+import ConviteCard from './convite-card';
+import LiberarAcesso from './liberar-acesso';
 import type { User, Loja } from '@/lib/types';
 import { format } from 'date-fns';
 
@@ -34,6 +36,7 @@ export default async function UsuariosPage() {
   const emp = await getEmpresaId();
   const atual = await getCurrentUser();
   const empresas = await listEmpresas();
+  const empresa = empresas.find(e => e.id === emp) ?? empresas[0];
   const users = db.prepare(`
     SELECT u.*, l.nome as loja_nome
     FROM users u
@@ -41,6 +44,10 @@ export default async function UsuariosPage() {
     WHERE u.empresa_id = ? OR u.acesso_global = 1
     ORDER BY u.hierarquia ASC, u.nome ASC
   `).all(emp) as (User & { loja_nome: string | null })[];
+
+
+  // Contas criadas pelo link de convite, ainda sem liberação
+  const aguardando = users.filter(u => u.ativo === 0);
 
   const lojas = db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[];
 
@@ -61,6 +68,38 @@ export default async function UsuariosPage() {
         subtitle="Cadastro de usuários, controle de acesso e monitoramento."
       />
       <main className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <ConviteCard empresaNome={empresa.nome} empresaId={empresa.id} />
+
+        {aguardando.length > 0 && (
+          <div className="card p-5 border-amber-200 bg-amber-50/40">
+            <h2 className="h2 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-700" />
+              Aguardando liberação
+              <span className="badge-gold">{aguardando.length}</span>
+            </h2>
+            <p className="text-sm text-slate mt-1">
+              Estas pessoas criaram a conta pelo link de convite e ainda não acessam o hub.
+              Defina a função de cada uma e marque &quot;conta liberada&quot;.
+            </p>
+            <div className="mt-4 space-y-4">
+              {aguardando.map(u => (
+                <div key={u.id} className="bg-white rounded-lg border border-line p-4">
+                  <div className="font-semibold text-navy-900">{u.nome}</div>
+                  <div className="text-xs text-slate-muted">
+                    {u.email} · <code className="bg-navy-50 px-1.5 py-0.5 rounded">{u.usuario}</code>
+                  </div>
+                  <LiberarAcesso
+                    user={u}
+                    lojas={lojas}
+                    empresas={empresas}
+                    podeMoverEmpresa={podeTrocarEmpresa(atual)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <details className="card p-5">
           <summary className="cursor-pointer flex items-center gap-2 h2">
             <Plus className="w-4 h-4" /> Novo usuário
@@ -141,7 +180,12 @@ export default async function UsuariosPage() {
           </form>
         </details>
 
-        <UsersTable users={users} />
+        <UsersTable
+          users={users}
+          lojas={lojas}
+          empresas={empresas}
+          podeMoverEmpresa={podeTrocarEmpresa(atual)}
+        />
 
         {/* Monitoramento de acesso */}
         <div className="card p-5">

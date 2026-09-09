@@ -5,6 +5,7 @@ import { seedIfEmpty } from '@/lib/seed';
 import { getCurrentUser } from '@/lib/auth';
 import { getEmpresaAtiva, listEmpresasDoUsuario } from '@/lib/empresa';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 seedIfEmpty();
 
@@ -40,7 +41,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const h = headers();
   const path = h.get('x-pathname') ?? '';
   const user = await getCurrentUser();
-  const isLogin = path.startsWith('/login') || !user;
+  const isLogin = path.startsWith('/login');
+
+  // Cookie de sessão apontando para usuário inexistente ou desativado:
+  // manda para o login em vez de renderizar uma página quebrada.
+  if (!isLogin && !user) {
+    const destino = path && path !== '/' ? `&next=${encodeURIComponent(path)}` : '';
+    redirect(`/login?error=${encodeURIComponent('Sua sessão expirou. Entre novamente.')}${destino}`);
+  }
+
   const empresaAtiva = isLogin ? null : await getEmpresaAtiva();
   const empresas = isLogin ? [] : await listEmpresasDoUsuario();
 

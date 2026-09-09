@@ -52,6 +52,10 @@ export async function login(formData: FormData) {
     maxAge: 60 * 60 * 24 * 7, // 7 dias
   });
 
+  // Só aceita caminho interno: '//host' seria redirect para fora do app
+  const destino = String(formData.get('next') ?? '');
+  const voltarPara = destino.startsWith('/') && !destino.startsWith('//') ? destino : '/';
+
   cookies().set(EMPRESA_COOKIE, String(empresa.id), {
     httpOnly: true,
     sameSite: 'lax',
@@ -60,7 +64,7 @@ export async function login(formData: FormData) {
     maxAge: 60 * 60 * 24 * 365,
   });
 
-  redirect('/');
+  redirect(voltarPara);
 }
 
 /**
@@ -84,7 +88,7 @@ export async function getCurrentUser() {
     SELECT u.*, l.nome as loja_nome
     FROM users u
     LEFT JOIN lojas l ON l.id = u.loja_id
-    WHERE u.id = ?
+    WHERE u.id = ? AND u.ativo = 1
   `).get(Number(sid)) as any;
   return user ?? null;
 }

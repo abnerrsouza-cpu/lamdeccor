@@ -1,31 +1,32 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC = ['/login', '/api'];
+const PUBLIC = ['/login', '/cadastro', '/api'];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (PUBLIC.some(p => pathname.startsWith(p))) return NextResponse.next();
-  if (pathname.startsWith('/_next') || pathname.includes('.')) return NextResponse.next();
+
+  // O x-pathname precisa ir em TODA resposta: o layout usa a rota para
+  // saber se a página é pública. Sem ele nas rotas públicas, o layout
+  // achava que /login era página protegida sem sessão e redirecionava
+  // para /login — um loop infinito.
+  const headers = new Headers(req.headers);
+  headers.set('x-pathname', pathname);
+  const segue = () => NextResponse.next({ request: { headers } });
+
+  if (PUBLIC.some(p => pathname.startsWith(p))) return segue();
+  if (pathname.startsWith('/_next') || pathname.includes('.')) return segue();
 
   const session = req.cookies.get('lam_session')?.value;
   if (!session) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';
     url.search = '';
-    // Guarda o destino para devolver a pessoa ao link que ela abriu
     if (pathname !== '/') url.searchParams.set('next', pathname + req.nextUrl.search);
     return NextResponse.redirect(url);
   }
 
-  // O layout precisa saber a rota para distinguir "tela de login" de
-  // "sessão inválida" — sem isso ele desenhava a casca deslogada por cima
-  // de uma página logada (menu sumia e ficava só o "Bom dia,").
-  // Middleware roda no edge e não acessa o SQLite, então quem valida a
-  // sessão de fato é o layout.
-  const headers = new Headers(req.headers);
-  headers.set('x-pathname', pathname);
-  return NextResponse.next({ request: { headers } });
+  return segue();
 }
 
 export const config = {

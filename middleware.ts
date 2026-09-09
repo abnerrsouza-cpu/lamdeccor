@@ -14,7 +14,15 @@ export function middleware(req: NextRequest) {
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
-  return NextResponse.next();
+
+  // O layout precisa saber a rota para distinguir "tela de login" de
+  // "sessão inválida" — sem isso ele desenhava a casca deslogada por cima
+  // de uma página logada (menu sumia e ficava só o "Bom dia,").
+  // Middleware roda no edge e não acessa o SQLite, então quem valida a
+  // sessão de fato é o layout.
+  const headers = new Headers(req.headers);
+  headers.set('x-pathname', pathname);
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {

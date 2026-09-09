@@ -84,7 +84,7 @@ export async function getCurrentUser() {
     SELECT u.*, l.nome as loja_nome
     FROM users u
     LEFT JOIN lojas l ON l.id = u.loja_id
-    WHERE u.id = ?
+    WHERE u.id = ? AND u.ativo = 1
   `).get(Number(sid)) as any;
   return user ?? null;
 }

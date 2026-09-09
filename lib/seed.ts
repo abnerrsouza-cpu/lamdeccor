@@ -5,7 +5,31 @@ import { getDb, TABELAS_POR_EMPRESA, EMPRESA_LAM } from './db';
  * Roda automaticamente se o banco estiver vazio.
  */
 export function seedIfEmpty() {
+  // Durante `next build` o volume ainda não está montado: o banco é um
+  // arquivo descartável dentro da imagem, e vários workers rodam em
+  // paralelo. Semear ali não serve para nada e provocava colisão.
+  if (process.env.NEXT_PHASE === 'phase-production-build') return;
+
   const db = getDb();
+  try {
+    semear(db);
+  } catch (err) {
+    // Rede de segurança: se dois processos semearem ao mesmo tempo, o
+    // perdedor encontra os dados do outro e segue — nunca derruba o boot.
+    console.warn('[seed] ignorado (banco já semeado por outro processo):',
+      (err as Error).message);
+  }
+}
+
+/** Todo o seed roda numa transação: ou entra inteiro, ou não entra nada. */
+function semear(db: ReturnType<typeof getDb>) {
+  const tx = db.transaction(() => {
+    seedInterno(db);
+  });
+  tx();
+}
+
+function seedInterno(db: ReturnType<typeof getDb>) {
   // Checa users, não lojas: a criação do schema já insere a unidade da Higix,
   // então lojas nunca está vazia num banco novo.
   const count = db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number };

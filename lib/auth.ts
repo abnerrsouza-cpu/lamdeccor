@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getDb } from './db';
 import { podeTrocarEmpresa } from './permissions';
+import { verificaSenha } from './senha';
 import { revalidatePath } from 'next/cache';
 
 const SESSION_COOKIE = 'lam_session';
@@ -24,7 +25,7 @@ export async function login(formData: FormData) {
 
   // Verificação simplificada (MVP)
   const validAdmin = user.role === 'admin' && senha === 'admin123';
-  const validNormal = senha === user.senha;
+  const validNormal = verificaSenha(senha, user.senha);
   if (!validAdmin && !validNormal) {
     return erroLogin('Senha incorreta.');
   }
@@ -37,6 +38,11 @@ export async function login(formData: FormData) {
   if (!empresa) return erroLogin('Empresa inválida.');
   if (!podeTrocarEmpresa(user) && empresa.id !== user.empresa_id) {
     return erroLogin(`Sua conta não tem acesso à ${empresa.nome}.`);
+  }
+
+  // Conta criada pelo cadastro aberto só entra depois de liberada por um admin
+  if (!user.ativo) {
+    return erroLogin('Sua conta ainda não foi liberada por um administrador.');
   }
 
   // Registra acesso

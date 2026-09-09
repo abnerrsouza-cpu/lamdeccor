@@ -6,9 +6,11 @@ import clsx from 'clsx';
 import { login } from '@/lib/auth';
 import type { Empresa } from '@/lib/empresa';
 
-export default function LoginForm({ empresas, erro, proximo }: {
+export default function LoginForm({ empresas, erro, aviso, proximo }: {
   empresas: Empresa[];
   erro?: string;
+  /** Mensagem positiva, ex: conta recém-criada aguardando liberação */
+  aviso?: string;
   /** Rota que a pessoa tentou abrir antes de logar */
   proximo?: string;
 }) {
@@ -84,9 +86,21 @@ export default function LoginForm({ empresas, erro, proximo }: {
           <label className="label">Senha</label>
           <input type="password" name="senha" required className="input" placeholder="••••••••" />
         </div>
+        {aviso && (
+          <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+            {aviso}
+          </p>
+        )}
         {erro && <p className="text-sm text-rose-600">{erro}</p>}
         <button type="submit" className="btn-primary w-full">Entrar</button>
       </form>
+
+      <p className="mt-6 pt-6 border-t border-line text-center text-xs text-slate-muted">
+        Não tem conta?{' '}
+        <a href="/cadastro" className="text-navy-700 font-semibold hover:underline">
+          Criar a minha
+        </a>
+      </p>
     </div>
   );
 }

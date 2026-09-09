@@ -41,22 +41,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const h = headers();
   const path = h.get('x-pathname') ?? '';
   const user = await getCurrentUser();
-  const isLogin = path.startsWith('/login');
+  // Rotas que existem justamente para quem não tem sessão
+  const publica = ['/login', '/cadastro'].some(p => path.startsWith(p));
 
   // Cookie de sessão apontando para usuário inexistente ou desativado:
   // manda para o login em vez de renderizar uma página quebrada.
-  if (!isLogin && !user) {
+  if (!publica && !user) {
     const destino = path && path !== '/' ? `&next=${encodeURIComponent(path)}` : '';
     redirect(`/login?error=${encodeURIComponent('Sua sessão expirou. Entre novamente.')}${destino}`);
   }
 
-  const empresaAtiva = isLogin ? null : await getEmpresaAtiva();
-  const empresas = isLogin ? [] : await listEmpresasDoUsuario();
+  const empresaAtiva = publica ? null : await getEmpresaAtiva();
+  const empresas = publica ? [] : await listEmpresasDoUsuario();
 
   return (
     <html lang="pt-BR">
       <body>
-        {isLogin ? (
+        {publica ? (
           <div className="min-h-screen bg-cream">{children}</div>
         ) : (
           <div className="min-h-screen bg-cream">

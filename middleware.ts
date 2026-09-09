@@ -12,6 +12,9 @@ export function middleware(req: NextRequest) {
   if (!session) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';
+    url.search = '';
+    // Guarda o destino para devolver a pessoa ao link que ela abriu
+    if (pathname !== '/') url.searchParams.set('next', pathname + req.nextUrl.search);
     return NextResponse.redirect(url);
   }
 

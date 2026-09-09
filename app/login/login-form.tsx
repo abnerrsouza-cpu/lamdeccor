@@ -6,7 +6,12 @@ import clsx from 'clsx';
 import { login } from '@/lib/auth';
 import type { Empresa } from '@/lib/empresa';
 
-export default function LoginForm({ empresas, erro }: { empresas: Empresa[]; erro?: string }) {
+export default function LoginForm({ empresas, erro, proximo }: {
+  empresas: Empresa[];
+  erro?: string;
+  /** Rota que a pessoa tentou abrir antes de logar */
+  proximo?: string;
+}) {
   const [empresaId, setEmpresaId] = useState(empresas[0]?.id);
   const empresa = empresas.find(e => e.id === empresaId) ?? empresas[0];
 
@@ -69,6 +74,7 @@ export default function LoginForm({ empresas, erro }: { empresas: Empresa[]; err
           </div>
         )}
         <input type="hidden" name="empresa_id" value={empresaId ?? ''} />
+        {proximo && <input type="hidden" name="next" value={proximo} />}
 
         <div>
           <label className="label">Usuário ou email</label>

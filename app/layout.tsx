@@ -46,7 +46,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Cookie de sessão apontando para usuário inexistente ou desativado:
   // manda para o login em vez de renderizar uma página quebrada.
   if (!isLogin && !user) {
-    redirect('/login?error=Sua sessão expirou. Entre novamente.');
+    const destino = path && path !== '/' ? `&next=${encodeURIComponent(path)}` : '';
+    redirect(`/login?error=${encodeURIComponent('Sua sessão expirou. Entre novamente.')}${destino}`);
   }
 
   const empresaAtiva = isLogin ? null : await getEmpresaAtiva();

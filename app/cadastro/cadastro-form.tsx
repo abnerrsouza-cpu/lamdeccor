@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import { ShieldCheck } from 'lucide-react';
+import CampoSenha from '@/components/campo-senha';
 import type { Empresa } from '@/lib/empresa';
 
 export default function CadastroForm({ empresas, erro, empresaInicial, acao }: {
@@ -66,11 +67,11 @@ export default function CadastroForm({ empresas, erro, empresaInicial, acao }: {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Senha</label>
-            <input type="password" name="senha" required minLength={6} className="input" />
+            <CampoSenha name="senha" required minLength={6} autoComplete="new-password" />
           </div>
           <div>
             <label className="label">Repita a senha</label>
-            <input type="password" name="senha_confirma" required minLength={6} className="input" />
+            <CampoSenha name="senha_confirma" required minLength={6} autoComplete="new-password" />
           </div>
         </div>
 

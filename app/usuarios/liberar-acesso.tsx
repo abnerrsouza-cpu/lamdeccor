@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { KeyRound, Check, X } from 'lucide-react';
 import { definirAcesso, definirSenha } from './actions';
+import CampoSenha from '@/components/campo-senha';
 import type { Loja, User, Empresa } from '@/lib/types';
 
 const ROLES = [
@@ -118,7 +119,7 @@ export default function LiberarAcesso({ user, lojas, empresas, podeMoverEmpresa 
         >
           <div className="flex-1">
             <label className="label">Nova senha (mínimo 6 caracteres)</label>
-            <input type="password" name="senha" required minLength={6} className="input" />
+            <CampoSenha name="senha" required minLength={6} autoComplete="new-password" />
           </div>
           <button type="submit" className="btn-primary shrink-0">Salvar senha</button>
         </form>

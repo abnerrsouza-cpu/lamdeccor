@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import clsx from 'clsx';
 import { login } from '@/lib/auth';
+import CampoSenha from '@/components/campo-senha';
 import type { Empresa } from '@/lib/empresa';
 
 export default function LoginForm({ empresas, erro, aviso, proximo }: {
@@ -84,7 +85,7 @@ export default function LoginForm({ empresas, erro, aviso, proximo }: {
         </div>
         <div>
           <label className="label">Senha</label>
-          <input type="password" name="senha" required className="input" placeholder="••••••••" />
+          <CampoSenha name="senha" required placeholder="••••••••" autoComplete="current-password" />
         </div>
         {aviso && (
           <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">

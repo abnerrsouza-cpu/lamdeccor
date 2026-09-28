@@ -31,7 +31,7 @@ const ROLE_BADGE: Record<string, string> = {
   gerente_loja: 'badge-slate',
 };
 
-export default async function UsuariosPage() {
+export default async function UsuariosPage({ searchParams }: { searchParams: { error?: string } }) {
   const db = getDb();
   const emp = await getEmpresaId();
   const atual = await getCurrentUser();
@@ -68,6 +68,12 @@ export default async function UsuariosPage() {
         subtitle="Cadastro de usuários, controle de acesso e monitoramento."
       />
       <main className="p-4 md:p-6 space-y-4 md:space-y-6">
+        {searchParams?.error && (
+          <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-4 py-3">
+            {searchParams.error}
+          </div>
+        )}
+
         <ConviteCard empresaNome={empresa.nome} empresaId={empresa.id} />
 
         {aguardando.length > 0 && (

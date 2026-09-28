@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
@@ -19,10 +20,35 @@ async function visivelNaEmpresa(ids: number[]) {
   return n === ids.length;
 }
 
+function erroUsuario(msg: string): never {
+  redirect(`/usuarios?error=${encodeURIComponent(msg)}`);
+}
+
 export async function criarUsuario(formData: FormData) {
   const db = getDb();
   const atual = await getCurrentUser();
   const empAtiva = await getEmpresaId();
+
+  const nome = String(formData.get('nome') ?? '').trim();
+  const usuario = String(formData.get('usuario') ?? '').trim().toLowerCase();
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+
+  // users.usuario e users.email são UNIQUE: sem esta checagem o banco lança
+  // exceção e a tela vira um "Application error" sem explicação nenhuma.
+  if (!nome) erroUsuario('Informe o nome completo.');
+  if (!usuario) erroUsuario('Informe o usuário (login).');
+  if (!email) erroUsuario('Informe o email.');
+
+  const jaExiste = db.prepare(
+    'SELECT usuario, email FROM users WHERE LOWER(usuario) = ? OR LOWER(email) = ?'
+  ).get(usuario, email) as { usuario: string; email: string } | undefined;
+  if (jaExiste) {
+    erroUsuario(
+      jaExiste.email.toLowerCase() === email
+        ? `Já existe uma conta com o email ${email}.`
+        : `Já existe uma conta com o usuário ${usuario}.`
+    );
+  }
 
   // Só quem tem acesso global escolhe a empresa do novo usuário
   const empresaId = podeTrocarEmpresa(atual) && formData.get('empresa_id')
@@ -30,22 +56,32 @@ export async function criarUsuario(formData: FormData) {
     : empAtiva;
   const acessoGlobal = podeTrocarEmpresa(atual) && formData.get('acesso_global') ? 1 : 0;
 
-  db.prepare(`
-    INSERT INTO users (empresa_id, acesso_global, nome, usuario, email, senha, role, hierarquia, cargo, loja_id, ativo)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-  `).run(
-    empresaId,
-    acessoGlobal,
-    String(formData.get('nome') ?? ''),
-    String(formData.get('usuario') ?? ''),
-    String(formData.get('email') ?? ''),
-    hashSenha(String(formData.get('senha') || '123456')),
-    String(formData.get('role') ?? 'social_media'),
-    Number(formData.get('hierarquia') ?? 5),
-    String(formData.get('cargo') ?? ''),
-    formData.get('loja_id') ? Number(formData.get('loja_id')) : null
-  );
+  try {
+    db.prepare(`
+      INSERT INTO users (empresa_id, acesso_global, nome, usuario, email, senha, role, hierarquia, cargo, loja_id, ativo)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `).run(
+      empresaId,
+      acessoGlobal,
+      nome,
+      usuario,
+      email,
+      hashSenha(String(formData.get('senha') || '123456')),
+      String(formData.get('role') ?? 'social_media'),
+      Number(formData.get('hierarquia') ?? 5),
+      String(formData.get('cargo') ?? ''),
+      formData.get('loja_id') ? Number(formData.get('loja_id')) : null
+    );
+  } catch (err) {
+    // Rede de segurança: qualquer recusa do banco vira mensagem, não tela de erro
+    const msg = (err as Error).message ?? '';
+    if (msg.includes('UNIQUE')) erroUsuario('Já existe uma conta com esse usuário ou email.');
+    erroUsuario('Não foi possível criar o usuário. Confira os dados e tente de novo.');
+  }
   revalidatePath('/usuarios');
+  // Limpa o ?error= de uma tentativa anterior — senão a mensagem antiga
+  // fica na tela mesmo depois do cadastro dar certo.
+  redirect('/usuarios');
 }
 
 export async function alternarAtivo(id: number, novoEstado: number) {

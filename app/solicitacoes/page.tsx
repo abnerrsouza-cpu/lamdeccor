@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
@@ -58,7 +59,7 @@ export default async function SolicitacoesPage() {
           <summary className="cursor-pointer flex items-center gap-2 h2">
             <Plus className="w-4 h-4" /> Nova solicitação
           </summary>
-          <form action={criarSolicitacao} className="mt-5 space-y-4">
+          <FormRascunho chave="solicitacao-nova" action={criarSolicitacao} className="mt-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
                 <label className="label">Tipo de pedido</label>
@@ -125,7 +126,7 @@ export default async function SolicitacoesPage() {
               <input type="date" name="prazo" className="input" />
             </div>
             <button type="submit" className="btn-primary">Abrir solicitação</button>
-          </form>
+          </FormRascunho>
         </details>
 
         <SolicitacoesList

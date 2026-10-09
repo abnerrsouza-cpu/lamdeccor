@@ -4,6 +4,9 @@ import Sidebar from '@/components/sidebar';
 import { seedIfEmpty } from '@/lib/seed';
 import { getCurrentUser } from '@/lib/auth';
 import { getEmpresaAtiva, listEmpresasDoUsuario } from '@/lib/empresa';
+import { pendencias } from '@/lib/pendencias';
+import { ehGerente } from '@/lib/permissions';
+import BloqueioPendencias from '@/components/bloqueio-pendencias';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
@@ -55,9 +58,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const empresaAtiva = publica ? null : await getEmpresaAtiva();
   const empresas = publica ? [] : await listEmpresasDoUsuario();
 
+  // Avisos importantes e pesquisa do mês travam a tela até serem resolvidos
+  const pend = publica || !user
+    ? { avisos: [], pesquisa: null }
+    : pendencias(empresaAtiva!.id, user.id, user.loja_id ?? null, ehGerente(user.role));
+
   return (
     <html lang="pt-BR">
       <body>
+        {/*
+          Sempre montado (quando há sessão): se o layout o removesse assim que
+          as pendências zeram, a tela de agradecimento sumiria antes de ser
+          lida. Quem decide aparecer ou não é o próprio componente.
+        */}
+        {!publica && <BloqueioPendencias avisos={pend.avisos} pesquisa={pend.pesquisa} />}
         {publica ? (
           <div className="min-h-screen bg-cream">{children}</div>
         ) : (

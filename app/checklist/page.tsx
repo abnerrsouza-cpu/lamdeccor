@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { redirect } from 'next/navigation';
 import { Plus, ClipboardCheck, Store } from 'lucide-react';
 import Link from 'next/link';
@@ -129,7 +130,7 @@ export default async function ChecklistPage({ searchParams }: {
           <summary className="cursor-pointer flex items-center gap-2 h2">
             <Plus className="w-4 h-4" /> Adicionar item à rotina
           </summary>
-          <form action={criarItem} className="mt-5 space-y-4">
+          <FormRascunho chave="checklist-item" action={criarItem} className="mt-5 space-y-4">
             <input type="hidden" name="loja_id" value={lojaId} />
             <div>
               <label className="label">O que precisa ser feito</label>
@@ -150,7 +151,7 @@ export default async function ChecklistPage({ searchParams }: {
               </p>
             )}
             <button type="submit" className="btn-primary">Adicionar</button>
-          </form>
+          </FormRascunho>
         </details>
       </main>
     </>

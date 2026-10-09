@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
@@ -38,7 +39,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: { 
             <summary className="btn-primary list-none cursor-pointer">
               <Plus className="w-4 h-4" /> Nova campanha
             </summary>
-            <form action={criarCampanha} className="absolute right-0 mt-2 w-[480px] card p-5 z-30 space-y-3">
+            <FormRascunho chave="campanha-nova" action={criarCampanha} className="absolute right-0 mt-2 w-[480px] card p-5 z-30 space-y-3">
               <div>
                 <label className="label">Nome da campanha</label>
                 <input name="nome" required className="input" placeholder="Ex: Hora da mãe descansar" />
@@ -68,7 +69,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: { 
                 </div>
               </div>
               <button type="submit" className="btn-primary w-full">Criar e abrir briefing</button>
-            </form>
+            </FormRascunho>
           </details>
           ) : (
             <span className="badge-blue flex items-center gap-1">

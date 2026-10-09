@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { criarInfluencer } from '../actions';
@@ -19,7 +20,7 @@ export default async function NovoInfluencerPage() {
           <ArrowLeft className="w-3 h-3" /> Voltar para a Central
         </Link>
 
-        <form action={criarInfluencer} className="card p-6 max-w-3xl space-y-5">
+        <FormRascunho chave="influencer-novo" action={criarInfluencer} className="card p-6 max-w-3xl space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Nome completo</label>
@@ -117,7 +118,7 @@ export default async function NovoInfluencerPage() {
             <Link href="/influencers" className="btn-secondary">Cancelar</Link>
             <button type="submit" className="btn-primary">Cadastrar influencer</button>
           </div>
-        </form>
+        </FormRascunho>
       </main>
     </>
   );

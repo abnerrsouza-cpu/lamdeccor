@@ -24,10 +24,17 @@ export default async function NovoEventoPage() {
             <label className="label">Título do evento</label>
             <input name="titulo" required className="input" placeholder="Ex: Briefing comercial Mães" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label className="label">Data</label>
               <input type="date" name="data" required className="input" />
+            </div>
+            <div>
+              <label className="label">Até (opcional)</label>
+              <input type="date" name="data_fim" className="input" />
+              <p className="text-[11px] text-slate-muted mt-1">
+                Para períodos, como a semana da Black Friday.
+              </p>
             </div>
             <div>
               <label className="label">Início</label>

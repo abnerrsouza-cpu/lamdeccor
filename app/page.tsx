@@ -10,6 +10,8 @@ import {
 import { ehGerente } from '@/lib/permissions';
 import DashboardGerente from './dashboard-gerente';
 import { hojeISO } from './checklist/actions';
+import { proximoAviso } from '@/lib/aviso';
+import AvisoEvento from './aviso-evento';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -53,6 +55,8 @@ export default async function DashboardPage() {
     FROM lojas l WHERE l.empresa_id = ?
   `).all(emp, hoje, emp) as { id: number; total: number; feitos: number }[];
   const lojasOk = lojasRotina.filter(l => l.total > 0 && l.feitos >= l.total).length;
+
+  const aviso = user ? proximoAviso(emp, user.id, user.loja_id ?? null, hoje) : undefined;
   const infsAtivos = (db.prepare(
     `SELECT COUNT(*) as c FROM influencers WHERE status='ativo' AND empresa_id = ?`
   ).get(emp) as { c: number }).c;
@@ -114,6 +118,8 @@ export default async function DashboardPage() {
       />
 
       <main className="p-4 md:p-6 space-y-4 md:space-y-5">
+        {aviso && <AvisoEvento evento={aviso} />}
+
         {/* Alerta da próxima campanha */}
         {proximaCampanha && (
           <div className="card p-5 border-amber-200 bg-gradient-to-r from-amber-50 to-white">

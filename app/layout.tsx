@@ -33,8 +33,9 @@ export const viewport: Viewport = {
   themeColor: '#0F2A4A',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Sem maximumScale/userScalable: o iOS os ignora desde o iOS 10, então não
+  // evitavam o zoom (quem evita é a fonte de 16px nos campos) e ainda
+  // impediam quem precisa ampliar a tela de fazê-lo no Android.
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

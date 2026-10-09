@@ -12,10 +12,18 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#0F2A4A',
     icons: [
       {
-        src: '/logo.jpg',
+        src: '/logo.png',
         sizes: '512x512',
-        type: 'image/jpeg',
+        type: 'image/png',
         purpose: 'any',
+      },
+      {
+        // 'maskable' deixa o Android recortar no formato do sistema sem
+        // cortar o sofá do meio da marca
+        src: '/logo.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
       },
     ],
   };

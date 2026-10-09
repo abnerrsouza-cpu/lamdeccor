@@ -16,8 +16,9 @@ let _db: Database.Database | null = null;
  *   1 - multi-empresa (tabela empresas + empresa_id nas tabelas do hub)
  *   2 - módulo de parceiros (parceiros, indicações e conversas)
  *   3 - nível 1 da hierarquia também alterna entre empresas
+ *   4 - logotipo quadrado em PNG (o .jpg antigo saiu do projeto)
  */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 export function getDb() {
   if (_db) return _db;
@@ -334,6 +335,12 @@ function ensureSchema(db: Database.Database) {
   for (const t of TABELAS_POR_EMPRESA) {
     db.prepare(`UPDATE ${t} SET empresa_id = ? WHERE empresa_id IS NULL`).run(EMPRESA_LAM);
   }
+  // O logo virou PNG quadrado; bancos antigos ainda apontam para o .jpg,
+  // que não existe mais — sem isto a marca quebra no login e na sidebar.
+  db.prepare(
+    `UPDATE empresas SET logo_url = '/logo.png' WHERE logo_url = '/logo.jpg'`
+  ).run();
+
   // Diretoria/admin e todo o nível 1 da hierarquia acessam as duas empresas
   db.prepare(
     `UPDATE users SET acesso_global = 1
@@ -397,7 +404,7 @@ function seedEmpresas(db: Database.Database) {
     INSERT OR IGNORE INTO empresas (id, nome, slug, subtitulo, logo_url, cor, ordem)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
-  insert.run(EMPRESA_LAM, 'LAM Deccor', 'lam', 'Marketing Hub', '/logo.jpg', '#0F2A4A', 1);
+  insert.run(EMPRESA_LAM, 'LAM Deccor', 'lam', 'Marketing Hub', '/logo.png', '#0F2A4A', 1);
   const higixNova = insert.run(EMPRESA_HIGIX, 'Higix', 'higix', 'Lavagens Especiais', null, '#0B3B36', 2);
 
   // Solicitacoes.loja_id é NOT NULL, então a empresa nova precisa de ao menos

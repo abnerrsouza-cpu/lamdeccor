@@ -17,8 +17,9 @@ let _db: Database.Database | null = null;
  *   2 - módulo de parceiros (parceiros, indicações e conversas)
  *   3 - nível 1 da hierarquia também alterna entre empresas
  *   4 - logotipo quadrado em PNG (o .jpg antigo saiu do projeto)
+ *   5 - checklist diário das lojas
  */
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 export function getDb() {
   if (_db) return _db;
@@ -259,6 +260,33 @@ function ensureSchema(db: Database.Database) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    /*
+     * Checklist diário da loja. Os itens são o "o que fazer"; as marcações
+     * são o "foi feito em tal dia". Item com loja_id NULL vale para todas as
+     * lojas da empresa; com loja_id preenchido é extra daquela loja.
+     */
+    CREATE TABLE IF NOT EXISTS checklist_itens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      empresa_id INTEGER REFERENCES empresas(id),
+      loja_id INTEGER REFERENCES lojas(id) ON DELETE CASCADE,
+      titulo TEXT NOT NULL,
+      descricao TEXT,
+      ordem INTEGER DEFAULT 0,
+      ativo INTEGER DEFAULT 1,
+      criado_por INTEGER REFERENCES users(id),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS checklist_marcacoes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id INTEGER NOT NULL REFERENCES checklist_itens(id) ON DELETE CASCADE,
+      loja_id INTEGER NOT NULL REFERENCES lojas(id) ON DELETE CASCADE,
+      data TEXT NOT NULL,
+      feito_por INTEGER REFERENCES users(id),
+      feito_em TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (item_id, loja_id, data)
+    );
+
     CREATE TABLE IF NOT EXISTS parceiros (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       empresa_id INTEGER REFERENCES empresas(id),
@@ -335,6 +363,8 @@ function ensureSchema(db: Database.Database) {
   for (const t of TABELAS_POR_EMPRESA) {
     db.prepare(`UPDATE ${t} SET empresa_id = ? WHERE empresa_id IS NULL`).run(EMPRESA_LAM);
   }
+  seedChecklistPadrao(db);
+
   // O logo virou PNG quadrado; bancos antigos ainda apontam para o .jpg,
   // que não existe mais — sem isto a marca quebra no login e na sidebar.
   db.prepare(
@@ -352,6 +382,7 @@ function ensureSchema(db: Database.Database) {
       ON integracoes(empresa_id, plataforma);
     CREATE INDEX IF NOT EXISTS idx_indicacoes_parceiro ON parceiro_indicacoes(parceiro_id);
     CREATE INDEX IF NOT EXISTS idx_conversas_parceiro  ON parceiro_conversas(parceiro_id, data DESC);
+    CREATE INDEX IF NOT EXISTS idx_checklist_marcacoes ON checklist_marcacoes(loja_id, data);
   `);
 
   db.pragma(`user_version = ${SCHEMA_VERSION}`);
@@ -361,7 +392,7 @@ function ensureSchema(db: Database.Database) {
 export const TABELAS_POR_EMPRESA = [
   'lojas', 'users', 'notificacoes', 'influencers', 'campanhas', 'eventos',
   'anuncios', 'integracoes', 'posts', 'financeiro', 'solicitacoes', 'afazeres',
-  'parceiros',
+  'parceiros', 'checklist_itens',
 ] as const;
 
 export const EMPRESA_LAM = 1;
@@ -397,6 +428,32 @@ function addColumn(db: Database.Database, tabela: string, coluna: string, tipo: 
   const cols = db.prepare(`PRAGMA table_info(${tabela})`).all() as Array<{ name: string }>;
   if (cols.some(c => c.name === coluna)) return;
   db.exec(`ALTER TABLE ${tabela} ADD COLUMN ${coluna} ${tipo}`);
+}
+
+/**
+ * Itens padrão da rotina diária de loja. loja_id NULL = vale para todas.
+ * INSERT OR IGNORE pelo título para não duplicar nem recriar o que apagarem.
+ */
+function seedChecklistPadrao(db: Database.Database) {
+  const padrao = [
+    ['Ligar a televisão', 'Se a loja tiver TV, ligar no conteúdo da marca'],
+    ['Conectar a playlist LAM Deccor', 'Som ambiente ligado na playlist oficial'],
+    ['Arrumar as vitrines', 'Conferir montagem, limpeza e etiquetas de preço'],
+    ['Postar story de loja aberta', 'Story no Instagram da loja marcando o perfil oficial'],
+  ];
+  const jaTem = (db.prepare(
+    'SELECT COUNT(*) as c FROM checklist_itens WHERE loja_id IS NULL'
+  ).get() as { c: number }).c;
+  if (jaTem > 0) return;
+
+  const ins = db.prepare(
+    `INSERT INTO checklist_itens (empresa_id, loja_id, titulo, descricao, ordem, ativo)
+     VALUES (?, NULL, ?, ?, ?, 1)`
+  );
+  const empresas = db.prepare('SELECT id FROM empresas').all() as { id: number }[];
+  for (const e of empresas) {
+    padrao.forEach(([titulo, desc], i) => ins.run(e.id, titulo, desc, i));
+  }
 }
 
 function seedEmpresas(db: Database.Database) {

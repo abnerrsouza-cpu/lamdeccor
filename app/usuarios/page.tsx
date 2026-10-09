@@ -2,7 +2,8 @@ import Topbar from '@/components/topbar';
 import { getDb } from '@/lib/db';
 import { getEmpresaId, listEmpresas } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
-import { podeTrocarEmpresa } from '@/lib/permissions';
+import { redirect } from 'next/navigation';
+import { podeTrocarEmpresa, ehAdmin } from '@/lib/permissions';
 import { criarUsuario } from './actions';
 import UsersTable from './users-table';
 import { Plus, Eye, Clock } from 'lucide-react';
@@ -32,6 +33,10 @@ const ROLE_BADGE: Record<string, string> = {
 };
 
 export default async function UsuariosPage({ searchParams }: { searchParams: { error?: string } }) {
+  // Esconder do menu não basta: sem isto o gerente entra digitando a URL
+  const _atual = await getCurrentUser();
+  if (!ehAdmin(_atual?.role)) redirect('/');
+
   const db = getDb();
   const emp = await getEmpresaId();
   const atual = await getCurrentUser();

@@ -1,10 +1,17 @@
 import Topbar from '@/components/topbar';
+import { getCurrentUser } from '@/lib/auth';
+import { ehGerente } from '@/lib/permissions';
+import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import KanbanBoard from './kanban-board';
 import type { Afazer, User } from '@/lib/types';
 
 export default async function AfazeresPage() {
+  // Esconder do menu não basta: sem isto o gerente entra digitando a URL
+  const _atual = await getCurrentUser();
+  if (ehGerente(_atual?.role)) redirect('/');
+
   const db = getDb();
   const emp = await getEmpresaId();
   const afazeres = db.prepare(`

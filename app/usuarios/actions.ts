@@ -8,6 +8,12 @@ import { getCurrentUser } from '@/lib/auth';
 import { podeTrocarEmpresa, ehAdmin } from '@/lib/permissions';
 import { hashSenha } from '@/lib/senha';
 
+/** Gerir usuários é exclusivo de admin/diretor — inclusive pelas actions. */
+async function exigeAdmin() {
+  const atual = await getCurrentUser();
+  return ehAdmin(atual?.role);
+}
+
 /** Só permite mexer em usuários que aparecem na empresa ativa. */
 async function visivelNaEmpresa(ids: number[]) {
   if (ids.length === 0) return false;
@@ -25,6 +31,7 @@ function erroUsuario(msg: string): never {
 }
 
 export async function criarUsuario(formData: FormData) {
+  if (!(await exigeAdmin())) return;
   const db = getDb();
   const atual = await getCurrentUser();
   const empAtiva = await getEmpresaId();
@@ -85,6 +92,7 @@ export async function criarUsuario(formData: FormData) {
 }
 
 export async function alternarAtivo(id: number, novoEstado: number) {
+  if (!(await exigeAdmin())) return;
   const db = getDb();
   db.prepare(
     'UPDATE users SET ativo = ? WHERE id = ? AND (empresa_id = ? OR acesso_global = 1)'
@@ -118,6 +126,7 @@ function limparReferencias(db: ReturnType<typeof getDb>, ids: number[]) {
 }
 
 export async function deletarUsuario(id: number) {
+  if (!(await exigeAdmin())) return;
   const db = getDb();
   if (!(await visivelNaEmpresa([id]))) return;
   const tx = db.transaction((id: number) => {
@@ -129,6 +138,7 @@ export async function deletarUsuario(id: number) {
 }
 
 export async function deletarMultiplosUsuarios(ids: number[]) {
+  if (!(await exigeAdmin())) return;
   if (ids.length === 0) return;
   const db = getDb();
   if (!(await visivelNaEmpresa(ids))) return;

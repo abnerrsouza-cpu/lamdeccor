@@ -75,6 +75,19 @@ html, body {
 /* Mobile-first: ajustes globais para telas pequenas */
 @media (max-width: 768px) {
   body { font-size: 14px; }
+
+  /*
+   * 16px nos campos é obrigatório no iPhone: o Safari do iOS dá zoom
+   * automático ao focar um campo com fonte menor que isso, e não desfaz
+   * sozinho depois. O user-scalable=no não evita — o iOS o ignora desde
+   * o iOS 10. A única solução é o campo ter 16px de fato.
+   */
+  .input,
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
   .h1 { font-size: 1.25rem !important; }
   .h2 { font-size: 1rem !important; }
   /* Tabelas com scroll horizontal em mobile */

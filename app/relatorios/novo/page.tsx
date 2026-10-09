@@ -9,7 +9,6 @@ const MODULO_LABEL: Record<string, string> = {
   campanhas: 'Campanhas',
   influencers: 'Influencers',
   calendario: 'Calendário',
-  anuncios: 'Anúncios',
   social: 'Social Media',
   financeiro: 'Financeiro',
   solicitacoes: 'Solicitações',

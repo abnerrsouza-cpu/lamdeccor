@@ -1,4 +1,7 @@
 import Topbar from '@/components/topbar';
+import { redirect } from 'next/navigation';
+import { ehGerente } from '@/lib/permissions';
+import { getCurrentUser } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import Link from 'next/link';
@@ -9,6 +12,10 @@ import { Plus, Wallet, TrendingUp, ArrowDownRight, ArrowUpRight, FileText } from
 import type { MovimentoFinanceiro } from '@/lib/types';
 
 export default async function FinanceiroPage() {
+  // Esconder do menu não basta: sem isto o gerente entra digitando a URL
+  const _u = await getCurrentUser();
+  if (ehGerente(_u?.role)) redirect('/');
+
   const db = getDb();
   const emp = await getEmpresaId();
   const movs = db.prepare(`

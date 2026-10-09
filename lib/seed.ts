@@ -435,7 +435,7 @@ As campanhas familiares terão como objetivo de impacto posicionamento a longo p
     'info', '/solicitacoes', 0);
   insertNot.run(userIds.admin, 'Campanha Mães bateu meta de impressões',
     'A campanha Awareness ultrapassou 285k impressões em 24h.',
-    'success', '/anuncios', 0);
+    'success', '/campanhas', 0);
   insertNot.run(userIds.admin, 'Lembrete: gravação amanhã',
     'Início de captação na fábrica - 02/05 às 08:00.',
     'warning', '/calendario', 1);

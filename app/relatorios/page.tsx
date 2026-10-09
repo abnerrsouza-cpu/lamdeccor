@@ -1,4 +1,7 @@
 import Topbar from '@/components/topbar';
+import { getCurrentUser } from '@/lib/auth';
+import { ehGerente } from '@/lib/permissions';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import {
   Users, Target, KanbanSquare, Calendar, Megaphone,
@@ -11,14 +14,17 @@ const MODULOS = [
   { id: 'campanhas', nome: 'Campanhas', desc: 'Briefings completos por canal e status.', icon: Target, color: 'bg-navy-500' },
   { id: 'influencers', nome: 'Influencers', desc: 'Acordos, redes sociais e performance.', icon: Users, color: 'bg-navy-500' },
   { id: 'calendario', nome: 'Calendário', desc: 'Eventos do período com convidados e ata.', icon: Calendar, color: 'bg-navy-500' },
-  { id: 'anuncios', nome: 'Anúncios', desc: 'Campanhas pagas, investimento e conversões.', icon: Megaphone, color: 'bg-navy-500' },
   { id: 'social', nome: 'Social Media', desc: 'Posts publicados/agendados e desempenho.', icon: Share2, color: 'bg-navy-500' },
   { id: 'financeiro', nome: 'Financeiro', desc: 'Saídas, entradas e ROI por campanha.', icon: Wallet, color: 'bg-navy-500' },
   { id: 'solicitacoes', nome: 'Solicitações', desc: 'Pedidos das lojas, status e prazos.', icon: Inbox, color: 'bg-navy-500' },
   { id: 'usuarios', nome: 'Usuários', desc: 'Cadastro e hierarquia do time.', icon: Shield, color: 'bg-navy-500' },
 ];
 
-export default function RelatoriosPage() {
+export default async function RelatoriosPage() {
+  // Esconder do menu não basta: sem isto o gerente entra digitando a URL
+  const _atual = await getCurrentUser();
+  if (ehGerente(_atual?.role)) redirect('/');
+
   return (
     <>
       <Topbar

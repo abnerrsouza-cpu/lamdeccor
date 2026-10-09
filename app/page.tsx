@@ -4,9 +4,12 @@ import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { getEmpresaAtiva } from '@/lib/empresa';
 import {
-  Wallet, Users, Megaphone, TrendingUp,
+  Wallet, Users, ClipboardCheck, TrendingUp,
   Calendar as CalendarIcon, AlertCircle, ArrowRight, Target
 } from 'lucide-react';
+import { ehGerente } from '@/lib/permissions';
+import DashboardGerente from './dashboard-gerente';
+import { hojeISO } from './checklist/actions';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +20,19 @@ export default async function DashboardPage() {
   const emp = empresa.id;
   const db = getDb();
 
+  // Gerente de loja tem um painel próprio, voltado à operação dele
+  if (ehGerente(user?.role)) {
+    return (
+      <>
+        <Topbar
+          title={`Bom dia, ${user!.nome.split(' ')[0]}.`}
+          subtitle={user!.loja_nome ? `Painel da ${user!.loja_nome}.` : 'Seu painel da loja.'}
+        />
+        <DashboardGerente user={user} emp={emp} empresaNome={empresa.nome} />
+      </>
+    );
+  }
+
   const totalSaida = (db.prepare(
     `SELECT COALESCE(SUM(valor),0) as v FROM financeiro WHERE tipo='saida' AND empresa_id = ?`
   ).get(emp) as { v: number }).v;
@@ -25,12 +41,18 @@ export default async function DashboardPage() {
   ).get(emp) as { v: number }).v;
   const roi = totalSaida > 0 ? ((totalEntrada / totalSaida - 1) * 100) : 0;
 
-  const adsAtivos = (db.prepare(
-    `SELECT COUNT(*) as c FROM anuncios WHERE status='ativo' AND empresa_id = ?`
-  ).get(emp) as { c: number }).c;
-  const totalConversoes = (db.prepare(
-    `SELECT COALESCE(SUM(conversoes),0) as v FROM anuncios WHERE empresa_id = ?`
-  ).get(emp) as { v: number }).v;
+  // Quantas lojas já fecharam a rotina de hoje
+  const hoje = await hojeISO();
+  const lojasRotina = db.prepare(`
+    SELECT l.id,
+      (SELECT COUNT(*) FROM checklist_itens i
+        WHERE i.empresa_id = ? AND i.ativo = 1 AND (i.loja_id IS NULL OR i.loja_id = l.id)) AS total,
+      (SELECT COUNT(*) FROM checklist_marcacoes m
+        JOIN checklist_itens i2 ON i2.id = m.item_id AND i2.ativo = 1
+        WHERE m.loja_id = l.id AND m.data = ?) AS feitos
+    FROM lojas l WHERE l.empresa_id = ?
+  `).all(emp, hoje, emp) as { id: number; total: number; feitos: number }[];
+  const lojasOk = lojasRotina.filter(l => l.total > 0 && l.feitos >= l.total).length;
   const infsAtivos = (db.prepare(
     `SELECT COUNT(*) as c FROM influencers WHERE status='ativo' AND empresa_id = ?`
   ).get(emp) as { c: number }).c;
@@ -138,8 +160,11 @@ export default async function DashboardPage() {
               helper="Entradas acumuladas" />
             <StatCard label="ROI estimado" value={`${roi.toFixed(0)}%`} icon={TrendingUp}
               helper={roi > 0 ? 'Investimento se pagou' : 'Avaliar'} highlight={roi > 100} />
-            <StatCard label="Anúncios ativos" value={String(adsAtivos)} icon={Megaphone}
-              helper={`${totalConversoes} conversões`} />
+            <StatCard label="Rotina das lojas hoje" value={`${lojasOk}/${lojasRotina.length}`}
+              icon={ClipboardCheck}
+              helper={lojasOk === lojasRotina.length && lojasRotina.length > 0
+                ? 'todas em dia'
+                : 'lojas com a rotina concluída'} />
           </div>
         </div>
 

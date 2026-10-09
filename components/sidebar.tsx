@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard, KanbanSquare, Users, Calendar, Megaphone,
+  LayoutDashboard, KanbanSquare, Users, Calendar,
   Share2, Wallet, Inbox, Bell, Target, Shield, LogOut, FileText,
-  Menu, X, Handshake, Settings
+  Menu, X, Handshake, Settings, ClipboardCheck
 } from 'lucide-react';
 import clsx from 'clsx';
 import EmpresaSwitcher from './empresa-switcher';
@@ -23,12 +23,12 @@ const NAV: Array<{
   acesso: RoleAccess;
 }> = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard, acesso: 'todos' },
+  { href: '/checklist', label: 'Rotina diária', icon: ClipboardCheck, acesso: 'todos' },
   { href: '/afazeres', label: 'Afazeres', icon: KanbanSquare, acesso: 'staff' },
   { href: '/influencers', label: 'Influencers', icon: Users, acesso: 'staff' },
   { href: '/parceiros', label: 'Parceiros', icon: Handshake, acesso: 'staff' },
   { href: '/campanhas', label: 'Campanhas', icon: Target, highlight: true, acesso: 'todos' },
   { href: '/calendario', label: 'Calendário', icon: Calendar, acesso: 'todos' },
-  { href: '/anuncios', label: 'Anúncios', icon: Megaphone, acesso: 'staff' },
   { href: '/social', label: 'Social Media', icon: Share2, acesso: 'staff' },
   { href: '/financeiro', label: 'Financeiro', icon: Wallet, acesso: 'staff' },
   { href: '/solicitacoes', label: 'Solicitações', icon: Inbox, acesso: 'todos' },

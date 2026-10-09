@@ -11,7 +11,6 @@ const MODULO_LABEL: Record<string, string> = {
   campanhas: 'Campanhas',
   influencers: 'Influencers',
   calendario: 'Calendário',
-  anuncios: 'Anúncios',
   social: 'Social Media',
   financeiro: 'Financeiro',
   solicitacoes: 'Solicitações',
@@ -84,7 +83,6 @@ export default async function PreviewPage({ searchParams }: {
         {modulo === 'campanhas' && <SecaoCampanhas inicio={inicio} fim={fim} emp={emp} />}
         {modulo === 'influencers' && <SecaoInfluencers inicio={inicio} fim={fim} emp={emp} />}
         {modulo === 'calendario' && <SecaoCalendario inicio={inicio} fim={fim} emp={emp} />}
-        {modulo === 'anuncios' && <SecaoAnuncios inicio={inicio} fim={fim} emp={emp} />}
         {modulo === 'social' && <SecaoSocial inicio={inicio} fim={fim} emp={emp} />}
         {modulo === 'financeiro' && <SecaoFinanceiro inicio={inicio} fim={fim} emp={emp} />}
         {modulo === 'solicitacoes' && <SecaoSolicitacoes inicio={inicio} fim={fim} emp={emp} />}
@@ -128,7 +126,6 @@ function SecaoGeral({ inicio, fim, emp }: { inicio: string | null; fim: string |
   return (
     <>
       <SecaoFinanceiro inicio={inicio} fim={fim} emp={emp} compacto />
-      <SecaoAnuncios inicio={inicio} fim={fim} emp={emp} compacto />
       <SecaoCampanhas inicio={inicio} fim={fim} emp={emp} compacto />
       <SecaoInfluencers inicio={inicio} fim={fim} emp={emp} compacto />
       <SecaoAfazeres inicio={inicio} fim={fim} emp={emp} compacto />
@@ -311,51 +308,6 @@ function SecaoCalendario({ inicio, fim, emp, compacto = false }: any) {
               <td className="px-2 py-1.5">{e.local ?? e.loja_nome ?? '—'}</td>
               <td className="px-2 py-1.5">{e.organizador ?? '—'}</td>
               <td className="px-2 py-1.5 text-right">{e.convidados}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
-    </section>
-  );
-}
-
-function SecaoAnuncios({ inicio, fim, emp, compacto = false }: any) {
-  const db = getDb();
-  const { where, params } = rangeFilter('data_inicio', inicio, fim, 'empresa_id', emp);
-  const rows = db.prepare(`SELECT * FROM anuncios ${where} ORDER BY investimento DESC`).all(...params) as any[];
-  const totalInvest = rows.reduce((s, r) => s + r.investimento, 0);
-  const totalConv = rows.reduce((s, r) => s + r.conversoes, 0);
-
-  return (
-    <section className="report-section mb-6">
-      <SectionTitle>Anúncios ({rows.length})</SectionTitle>
-      <p className="text-xs text-slate mb-2">
-        Investimento total: <strong className="text-navy-900">{fmtBRL(totalInvest)}</strong> ·
-        Conversões: <strong className="text-navy-900">{totalConv}</strong>
-      </p>
-      <table className="w-full text-xs border border-line">
-        <thead className="bg-navy-50">
-          <tr>
-            <th className="px-2 py-1.5 text-left">Campanha</th>
-            <th className="px-2 py-1.5 text-left">Plataforma</th>
-            <th className="px-2 py-1.5 text-left">Status</th>
-            <th className="px-2 py-1.5 text-right">Investido</th>
-            <th className="px-2 py-1.5 text-right">Impressões</th>
-            <th className="px-2 py-1.5 text-right">CTR</th>
-            <th className="px-2 py-1.5 text-right">Conv.</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(a => (
-            <tr key={a.id} className="border-t border-line">
-              <td className="px-2 py-1.5 font-semibold text-navy-900">{a.campanha}</td>
-              <td className="px-2 py-1.5 capitalize">{a.plataforma}</td>
-              <td className="px-2 py-1.5 capitalize">{a.status}</td>
-              <td className="px-2 py-1.5 text-right">{fmtBRL(a.investimento)}</td>
-              <td className="px-2 py-1.5 text-right">{fmtNum(a.impressoes)}</td>
-              <td className="px-2 py-1.5 text-right">{a.ctr.toFixed(2)}%</td>
-              <td className="px-2 py-1.5 text-right">{a.conversoes}</td>
             </tr>
           ))}
         </tbody>

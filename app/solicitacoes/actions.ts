@@ -51,9 +51,55 @@ export async function criarSolicitacao(formData: FormData) {
 
 export async function atualizarStatus(id: number, status: string) {
   const db = getDb();
+  const emp = await getEmpresaId();
+
   db.prepare('UPDATE solicitacoes SET status = ? WHERE id = ? AND empresa_id = ?')
-    .run(status, id, await getEmpresaId());
+    .run(status, id, emp);
+
+  // Aceitar a solicitação cria a tarefa correspondente no Kanban, para o
+  // time não ter que redigitar o pedido. Só na primeira vez: se já existe
+  // card para esta solicitação, mover o status de novo não duplica.
+  if (status === 'em_execucao') {
+    const s = db.prepare(`
+      SELECT s.*, l.nome AS loja_nome
+      FROM solicitacoes s
+      LEFT JOIN lojas l ON l.id = s.loja_id
+      WHERE s.id = ? AND s.empresa_id = ?
+    `).get(id, emp) as any;
+
+    if (s) {
+      const marca = `[Solicitação #${id}]`;
+      const jaTem = db.prepare(
+        `SELECT id FROM afazeres WHERE empresa_id = ? AND descricao LIKE ?`
+      ).get(emp, `%${marca}%`);
+
+      if (!jaTem) {
+        const partes = [
+          s.descricao?.trim(),
+          s.loja_nome ? `Loja: ${s.loja_nome}` : null,
+          marca,
+        ].filter(Boolean);
+
+        db.prepare(`
+          INSERT INTO afazeres
+            (empresa_id, titulo, descricao, coluna, prioridade, time, responsavel_id, prazo)
+          VALUES (?, ?, ?, 'a_fazer', ?, ?, ?, ?)
+        `).run(
+          emp,
+          s.titulo,
+          partes.join('\n\n'),
+          s.prioridade ?? 'media',
+          s.tipo ?? null,
+          s.responsavel_id ?? null,
+          s.prazo ?? null
+        );
+        revalidatePath('/afazeres');
+      }
+    }
+  }
+
   revalidatePath('/solicitacoes');
+  revalidatePath('/');
 }
 
 export async function atribuirResponsavel(id: number, formData: FormData) {

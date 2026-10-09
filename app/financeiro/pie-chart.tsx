@@ -25,7 +25,7 @@ export default function PieChart({ data }: { data: Array<{ nome: string; valor: 
     n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex flex-col sm:flex-row items-center gap-6">
       <svg viewBox="0 0 200 200" className="w-44 h-44 shrink-0">
         {slices.map((s, i) => (
           <path
@@ -44,7 +44,7 @@ export default function PieChart({ data }: { data: Array<{ nome: string; valor: 
           {fmtBRL(total)}
         </text>
       </svg>
-      <div className="flex-1 space-y-2">
+      <div className="flex-1 w-full min-w-0 space-y-2">
         {slices.map((s, i) => (
           <div key={i} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 min-w-0">

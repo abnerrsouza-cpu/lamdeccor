@@ -51,26 +51,38 @@ export default function ChecklistLoja({ itens, lojaId, admin }: {
         <ul className="space-y-1">
           {itens.map(item => (
             <li key={item.id} className="group">
-              <div className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
-                item.feito ? 'bg-emerald-50/60' : 'hover:bg-navy-50/50'
-              }`}>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => start(async () => {
-                    await marcarItem(item.id, lojaId, !item.feito);
-                  })}
-                  aria-pressed={!!item.feito}
-                  aria-label={item.feito ? `Desmarcar ${item.titulo}` : `Marcar ${item.titulo}`}
-                  className={`mt-0.5 w-6 h-6 rounded-md border-2 shrink-0 flex items-center justify-center
+              {/*
+                A linha inteira é o botão: no celular, acertar uma caixinha de
+                21px com o dedo é ruim, e marcar a rotina é a ação do dia.
+              */}
+              <div
+                role="button"
+                tabIndex={0}
+                aria-pressed={!!item.feito}
+                aria-label={item.feito ? `Desmarcar ${item.titulo}` : `Marcar ${item.titulo}`}
+                onClick={() => { if (!pending) start(async () => { await marcarItem(item.id, lojaId, !item.feito); }); }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!pending) start(async () => { await marcarItem(item.id, lojaId, !item.feito); });
+                  }
+                }}
+                className={`flex items-start gap-3 p-3 min-h-[56px] rounded-lg cursor-pointer
+                            transition-colors select-none ${
+                  item.feito ? 'bg-emerald-50/60' : 'hover:bg-navy-50/50 active:bg-navy-50'
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`mt-0.5 w-7 h-7 rounded-md border-2 shrink-0 flex items-center justify-center
                               transition-colors ${
                     item.feito
                       ? 'bg-emerald-500 border-emerald-500 text-white'
-                      : 'border-slate-300 hover:border-navy-500 bg-white'
+                      : 'border-slate-300 bg-white'
                   }`}
                 >
                   {item.feito === 1 && <Check className="w-4 h-4" strokeWidth={3} />}
-                </button>
+                </span>
 
                 <div className="flex-1 min-w-0">
                   <div className={`text-sm font-semibold ${
@@ -92,7 +104,8 @@ export default function ChecklistLoja({ itens, lojaId, admin }: {
                   <button
                     type="button"
                     title="Remover este item da rotina"
-                    onClick={() => {
+                    onClick={e => {
+                      e.stopPropagation();
                       if (!confirm(`Remover "${item.titulo}" da rotina?`)) return;
                       start(async () => { await removerItem(item.id); });
                     }}

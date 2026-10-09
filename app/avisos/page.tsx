@@ -28,6 +28,26 @@ export default async function AvisosPage() {
     ORDER BY a.importante DESC, a.created_at DESC
   `).all(emp, user.loja_id ?? -1, admin ? 1 : 0) as any[];
 
+  /*
+   * Para cada aviso importante: quem já confirmou e quem ainda falta.
+   * "Falta" = quem recebe o aviso (empresa toda ou aquela loja) e está ativo.
+   */
+  const confirmacoes = admin ? db.prepare(`
+    SELECT c.aviso_id, u.nome, u.loja_id, l.nome AS loja_nome, c.confirmado_em
+    FROM aviso_confirmacoes c
+    JOIN users u ON u.id = c.user_id
+    LEFT JOIN lojas l ON l.id = u.loja_id
+    JOIN avisos a ON a.id = c.aviso_id
+    WHERE a.empresa_id = ?
+    ORDER BY c.confirmado_em
+  `).all(emp) as any[] : [];
+
+  const destinatarios = admin ? db.prepare(`
+    SELECT u.id, u.nome, u.loja_id, l.nome AS loja_nome
+    FROM users u LEFT JOIN lojas l ON l.id = u.loja_id
+    WHERE u.empresa_id = ? AND u.ativo = 1 AND u.role = 'gerente_loja'
+  `).all(emp) as any[] : [];
+
   const lojas = admin
     ? db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[]
     : [];
@@ -39,6 +59,16 @@ export default async function AvisosPage() {
     WHERE p.empresa_id = ?
     GROUP BY p.referencia ORDER BY p.referencia DESC LIMIT 6
   `).all(emp) as { referencia: string; respostas: number; media: number }[] : [];
+
+  const respostasDetalhe = admin ? db.prepare(`
+    SELECT p.*, u.nome AS autor, l.nome AS loja_nome
+    FROM pesquisa_respostas p
+    LEFT JOIN users u ON u.id = p.user_id
+    LEFT JOIN lojas l ON l.id = p.loja_id
+    WHERE p.empresa_id = ?
+    ORDER BY p.referencia DESC, p.nota
+    LIMIT 40
+  `).all(emp) as any[] : [];
 
   return (
     <>
@@ -99,6 +129,45 @@ export default async function AvisosPage() {
                 </div>
               ))}
             </div>
+
+            {respostasDetalhe.length > 0 && (
+              <details className="mt-4">
+                <summary className="cursor-pointer text-sm font-semibold text-navy-700">
+                  Ver o que cada gerente respondeu
+                </summary>
+                <div className="mt-3 space-y-2">
+                  {respostasDetalhe.map(r => (
+                    <div key={r.id} className="p-3 rounded-lg border border-line">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-sm font-bold ${
+                          r.nota >= 4 ? 'text-emerald-700' : r.nota === 3 ? 'text-gold-deep' : 'text-rose-600'
+                        }`}>
+                          {r.nota}/5
+                        </span>
+                        <span className="text-sm font-semibold text-navy-900">{r.autor ?? '—'}</span>
+                        {r.loja_nome && <span className="badge-slate">{r.loja_nome}</span>}
+                        <span className="text-xs text-slate-muted">{r.referencia}</span>
+                        {r.materiais_no_prazo && (
+                          <span className="badge-blue">
+                            materiais: {r.materiais_no_prazo.replace('_', ' ')}
+                          </span>
+                        )}
+                      </div>
+                      {r.faltou && (
+                        <p className="text-sm text-slate mt-1.5">
+                          <strong className="text-navy-700">Faltou:</strong> {r.faltou}
+                        </p>
+                      )}
+                      {r.sugestoes && (
+                        <p className="text-sm text-slate mt-1">
+                          <strong className="text-navy-700">Sugestão:</strong> {r.sugestoes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
           </div>
         )}
 
@@ -132,12 +201,60 @@ export default async function AvisosPage() {
                     <div className="text-xs text-slate-muted mt-2">
                       {a.autor_nome && `${a.autor_nome} · `}
                       {new Date(a.created_at).toLocaleDateString('pt-BR')}
-                      {admin && a.importante === 1 && (
-                        <span className="ml-2 text-emerald-700 font-semibold">
-                          <Check className="w-3 h-3 inline" /> {a.confirmados} confirmaram
-                        </span>
-                      )}
                     </div>
+
+                    {admin && a.importante === 1 && (() => {
+                      const leram = confirmacoes.filter(c => c.aviso_id === a.id);
+                      const idsQueLeram = new Set(leram.map(c => c.nome));
+                      const faltam = destinatarios
+                        .filter(d => a.loja_id === null || d.loja_id === a.loja_id)
+                        .filter(d => !idsQueLeram.has(d.nome));
+                      return (
+                        <details className="mt-3">
+                          <summary className="cursor-pointer text-xs font-semibold text-navy-700">
+                            <Check className="w-3 h-3 inline" /> {leram.length} confirmaram
+                            {faltam.length > 0 && (
+                              <span className="text-amber-700"> · {faltam.length} ainda não</span>
+                            )}
+                          </summary>
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <div className="font-semibold text-emerald-700 mb-1">Confirmaram</div>
+                              {leram.length === 0 ? (
+                                <p className="text-slate-muted">Ninguém ainda.</p>
+                              ) : (
+                                <ul className="space-y-0.5">
+                                  {leram.map((c, i) => (
+                                    <li key={i} className="text-slate">
+                                      {c.nome}
+                                      {c.loja_nome && <span className="text-slate-muted"> · {c.loja_nome}</span>}
+                                      <span className="text-slate-muted">
+                                        {' · '}{new Date(c.confirmado_em).toLocaleDateString('pt-BR')}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-amber-700 mb-1">Ainda não leram</div>
+                              {faltam.length === 0 ? (
+                                <p className="text-slate-muted">Todos confirmaram.</p>
+                              ) : (
+                                <ul className="space-y-0.5">
+                                  {faltam.map(d => (
+                                    <li key={d.id} className="text-slate">
+                                      {d.nome}
+                                      {d.loja_nome && <span className="text-slate-muted"> · {d.loja_nome}</span>}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                        </details>
+                      );
+                    })()}
                   </div>
                   {admin && (
                     <form action={arquivarAviso.bind(null, a.id)}>

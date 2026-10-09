@@ -39,7 +39,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: { 
             <summary className="btn-primary list-none cursor-pointer">
               <Plus className="w-4 h-4" /> Nova campanha
             </summary>
-            <FormRascunho chave="campanha-nova" action={criarCampanha} className="absolute right-0 mt-2 w-[480px] card p-5 z-30 space-y-3">
+            <FormRascunho chave="campanha-nova" action={criarCampanha} className="absolute right-0 mt-2 w-[min(480px,calc(100vw-2rem))] card p-5 z-30 space-y-3">
               <div>
                 <label className="label">Nome da campanha</label>
                 <input name="nome" required className="input" placeholder="Ex: Hora da mãe descansar" />

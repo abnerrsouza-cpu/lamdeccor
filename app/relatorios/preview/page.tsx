@@ -154,7 +154,7 @@ function SecaoAfazeres({ inicio, fim, emp, compacto = false }: any) {
       {Object.entries(porColuna).map(([col, items]) => items.length > 0 && (
         <div key={col} className="mb-4">
           <h3 className="text-sm font-bold text-navy-700 mb-2 capitalize">{col.replace('_', ' ')}</h3>
-          <table className="w-full text-xs border border-line">
+          <div className="overflow-x-auto print:overflow-visible"><table className="w-full text-xs border border-line min-w-[560px] print:min-w-0">
             <thead className="bg-navy-50">
               <tr>
                 <th className="px-2 py-1.5 text-left">Título</th>
@@ -175,7 +175,7 @@ function SecaoAfazeres({ inicio, fim, emp, compacto = false }: any) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       ))}
       {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
@@ -191,7 +191,7 @@ function SecaoCampanhas({ inicio, fim, emp, compacto = false }: any) {
   return (
     <section className="report-section mb-6">
       <SectionTitle>Campanhas ({rows.length})</SectionTitle>
-      <table className="w-full text-xs border border-line">
+      <div className="overflow-x-auto print:overflow-visible"><table className="w-full text-xs border border-line min-w-[560px] print:min-w-0">
         <thead className="bg-navy-50">
           <tr>
             <th className="px-2 py-1.5 text-left">Nome</th>
@@ -214,7 +214,7 @@ function SecaoCampanhas({ inicio, fim, emp, compacto = false }: any) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
     </section>
   );
@@ -239,7 +239,7 @@ function SecaoInfluencers({ inicio, fim, emp, compacto = false }: any) {
       <p className="text-xs text-slate mb-2">
         Valor total de acordos vigentes: <strong className="text-navy-900">{fmtBRL(totalAcordo)}</strong>
       </p>
-      <table className="w-full text-xs border border-line">
+      <div className="overflow-x-auto print:overflow-visible"><table className="w-full text-xs border border-line min-w-[560px] print:min-w-0">
         <thead className="bg-navy-50">
           <tr>
             <th className="px-2 py-1.5 text-left">Nome</th>
@@ -264,7 +264,7 @@ function SecaoInfluencers({ inicio, fim, emp, compacto = false }: any) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
     </section>
   );
@@ -286,7 +286,7 @@ function SecaoCalendario({ inicio, fim, emp, compacto = false }: any) {
   return (
     <section className="report-section mb-6">
       <SectionTitle>Calendário ({rows.length} eventos)</SectionTitle>
-      <table className="w-full text-xs border border-line">
+      <div className="overflow-x-auto print:overflow-visible"><table className="w-full text-xs border border-line min-w-[560px] print:min-w-0">
         <thead className="bg-navy-50">
           <tr>
             <th className="px-2 py-1.5 text-left">Data</th>
@@ -311,7 +311,7 @@ function SecaoCalendario({ inicio, fim, emp, compacto = false }: any) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
     </section>
   );
@@ -330,7 +330,7 @@ function SecaoSocial({ inicio, fim, emp, compacto = false }: any) {
   return (
     <section className="report-section mb-6">
       <SectionTitle>Social Media ({rows.length} posts)</SectionTitle>
-      <table className="w-full text-xs border border-line">
+      <div className="overflow-x-auto print:overflow-visible"><table className="w-full text-xs border border-line min-w-[560px] print:min-w-0">
         <thead className="bg-navy-50">
           <tr>
             <th className="px-2 py-1.5 text-left">Data</th>
@@ -355,7 +355,7 @@ function SecaoSocial({ inicio, fim, emp, compacto = false }: any) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
     </section>
   );
@@ -386,7 +386,7 @@ function SecaoFinanceiro({ inicio, fim, emp, compacto = false }: any) {
         <KPI label="ROI" value={totalSaida > 0 ? `${roi.toFixed(0)}%` : '—'} color="text-navy-900" />
       </div>
       {!compacto && (
-        <table className="w-full text-xs border border-line">
+        <div className="overflow-x-auto print:overflow-visible"><table className="w-full text-xs border border-line min-w-[560px] print:min-w-0">
           <thead className="bg-navy-50">
             <tr>
               <th className="px-2 py-1.5 text-left">Data</th>
@@ -413,7 +413,7 @@ function SecaoFinanceiro({ inicio, fim, emp, compacto = false }: any) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
       {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
     </section>
@@ -436,7 +436,7 @@ function SecaoSolicitacoes({ inicio, fim, emp, compacto = false }: any) {
   return (
     <section className="report-section mb-6">
       <SectionTitle>Solicitações ({rows.length})</SectionTitle>
-      <table className="w-full text-xs border border-line">
+      <div className="overflow-x-auto print:overflow-visible"><table className="w-full text-xs border border-line min-w-[560px] print:min-w-0">
         <thead className="bg-navy-50">
           <tr>
             <th className="px-2 py-1.5 text-left">Tipo</th>
@@ -463,7 +463,7 @@ function SecaoSolicitacoes({ inicio, fim, emp, compacto = false }: any) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
     </section>
   );
@@ -482,7 +482,7 @@ function SecaoUsuarios({ inicio, fim, emp, compacto = false }: any) {
   return (
     <section className="report-section mb-6">
       <SectionTitle>Usuários ({rows.length})</SectionTitle>
-      <table className="w-full text-xs border border-line">
+      <div className="overflow-x-auto print:overflow-visible"><table className="w-full text-xs border border-line min-w-[560px] print:min-w-0">
         <thead className="bg-navy-50">
           <tr>
             <th className="px-2 py-1.5 text-left">Nome</th>
@@ -507,7 +507,7 @@ function SecaoUsuarios({ inicio, fim, emp, compacto = false }: any) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       {rows.length === 0 && <p className="text-xs text-slate-muted italic">Sem registros no período.</p>}
     </section>
   );

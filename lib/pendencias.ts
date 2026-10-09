@@ -50,8 +50,10 @@ export function pendencias(
     WHERE a.empresa_id = ? AND a.ativo = 1 AND a.importante = 1
       AND (a.loja_id IS NULL OR a.loja_id = ?)
       AND c.id IS NULL
+      -- Quem escreveu o aviso não precisa confirmar que leu o próprio texto
+      AND (a.autor_id IS NULL OR a.autor_id != ?)
     ORDER BY a.created_at
-  `).all(userId, emp, lojaId ?? -1) as AvisoPendente[];
+  `).all(userId, emp, lojaId ?? -1, userId) as AvisoPendente[];
 
   let pesquisa: PesquisaPendente | null = null;
   if (ehGerenteLoja) {

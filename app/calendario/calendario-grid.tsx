@@ -27,12 +27,32 @@ export default function CalendarioGrid({ ano, mes, eventos }: {
   const totalDias = new Date(ano, mes, 0).getDate();
   const diaInicial = primeiroDia.getDay();
 
-  // Evento por dia
-  const eventosPorDia: Record<number, Evento[]> = {};
+  /*
+   * Evento por dia. Um evento com data_fim ocupa todos os dias do período
+   * (ex: semana da Black Friday aparece de segunda a domingo), recortado
+   * ao mês que está na tela.
+   */
+  const eventosPorDia: Record<number, Array<Evento & { _posicao?: 'inicio' | 'meio' | 'fim' }>> = {};
+  const emDias = (iso: string) => {
+    const [a, m, d] = iso.split('-').map(Number);
+    return Date.UTC(a, m - 1, d) / 86400000;
+  };
+
   eventos.forEach(ev => {
-    const dia = Number(ev.data.split('-')[2]);
-    if (!eventosPorDia[dia]) eventosPorDia[dia] = [];
-    eventosPorDia[dia].push(ev);
+    const ini = emDias(ev.data);
+    const fim = ev.data_fim ? emDias(ev.data_fim) : ini;
+
+    for (let t = ini; t <= fim; t++) {
+      const dt = new Date(t * 86400000);
+      if (dt.getUTCFullYear() !== ano || dt.getUTCMonth() + 1 !== mes) continue;
+
+      const dia = dt.getUTCDate();
+      if (!eventosPorDia[dia]) eventosPorDia[dia] = [];
+      eventosPorDia[dia].push({
+        ...ev,
+        _posicao: ini === fim ? undefined : t === ini ? 'inicio' : t === fim ? 'fim' : 'meio',
+      });
+    }
   });
 
   const cells: Array<{ dia: number | null }> = [];
@@ -95,22 +115,36 @@ export default function CalendarioGrid({ ano, mes, eventos }: {
                 </div>
               )}
               <div className="space-y-1">
-                {evs.slice(0, 3).map(ev => (
-                  <Link
-                    key={ev.id}
-                    href={`/calendario/${ev.id}`}
-                    className="block text-[11px] px-1.5 py-0.5 rounded truncate hover:opacity-80"
-                    style={{
-                      backgroundColor: ev.cor + '22',
-                      borderLeft: `3px solid ${ev.cor}`,
-                      color: '#0A1F3D'
-                    }}
-                    title={ev.titulo}
-                  >
-                    {ev.hora_inicio && <span className="font-bold">{ev.hora_inicio} </span>}
-                    {ev.titulo}
-                  </Link>
-                ))}
+                {evs.slice(0, 3).map(ev => {
+                  // Faixa contínua: só o primeiro dia arredonda à esquerda e
+                  // mostra o título; os dias seguintes emendam visualmente.
+                  const meio = ev._posicao === 'meio';
+                  const fim = ev._posicao === 'fim';
+                  const continua = meio || fim;
+                  return (
+                    <Link
+                      key={`${ev.id}-${cell.dia}`}
+                      href={`/calendario/${ev.id}`}
+                      className={clsx(
+                        'block text-[11px] px-1.5 py-0.5 truncate hover:opacity-80',
+                        continua ? 'rounded-r' : 'rounded',
+                        meio && '!rounded-none'
+                      )}
+                      style={{
+                        backgroundColor: ev.cor + '22',
+                        borderLeft: continua ? 'none' : `3px solid ${ev.cor}`,
+                        boxShadow: continua ? `inset 0 1px 0 ${ev.cor}55, inset 0 -1px 0 ${ev.cor}55` : undefined,
+                        color: '#0A1F3D',
+                      }}
+                      title={ev.data_fim ? `${ev.titulo} (${ev.data} a ${ev.data_fim})` : ev.titulo}
+                    >
+                      {!continua && ev.hora_inicio && <span className="font-bold">{ev.hora_inicio} </span>}
+                      {continua
+                        ? <span className="opacity-60">{fim ? '└ fim · ' : '· '}{ev.titulo}</span>
+                        : ev.titulo}
+                    </Link>
+                  );
+                })}
                 {evs.length > 3 && (
                   <div className="text-[10px] text-slate-muted px-1">
                     + {evs.length - 3} eventos

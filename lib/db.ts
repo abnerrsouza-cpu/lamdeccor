@@ -18,8 +18,9 @@ let _db: Database.Database | null = null;
  *   3 - nível 1 da hierarquia também alterna entre empresas
  *   4 - logotipo quadrado em PNG (o .jpg antigo saiu do projeto)
  *   5 - checklist diário das lojas
+ *   6 - eventos de vários dias e confirmação de ciência
  */
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 export function getDb() {
   if (_db) return _db;
@@ -265,6 +266,15 @@ function ensureSchema(db: Database.Database) {
      * são o "foi feito em tal dia". Item com loja_id NULL vale para todas as
      * lojas da empresa; com loja_id preenchido é extra daquela loja.
      */
+    /* Quem já deu ciência de um evento (o "confirmar" do aviso no painel) */
+    CREATE TABLE IF NOT EXISTS evento_ciencias (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      evento_id INTEGER NOT NULL REFERENCES eventos(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      confirmado_em TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (evento_id, user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS checklist_itens (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       empresa_id INTEGER REFERENCES empresas(id),
@@ -363,6 +373,9 @@ function ensureSchema(db: Database.Database) {
   for (const t of TABELAS_POR_EMPRESA) {
     db.prepare(`UPDATE ${t} SET empresa_id = ? WHERE empresa_id IS NULL`).run(EMPRESA_LAM);
   }
+  // Eventos que ocupam um período (semana da Black Friday, por exemplo)
+  addColumn(db, 'eventos', 'data_fim', 'TEXT');
+
   seedChecklistPadrao(db);
 
   // O logo virou PNG quadrado; bancos antigos ainda apontam para o .jpg,

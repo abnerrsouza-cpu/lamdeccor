@@ -118,6 +118,8 @@ export interface Evento {
   id: number;
   titulo: string;
   data: string;
+  /** Último dia do evento. NULL = acontece só em `data`. */
+  data_fim: string | null;
   hora_inicio: string | null;
   hora_fim: string | null;
   tipo: 'campanha' | 'lancamento' | 'reuniao' | 'evento_loja' | 'feira' | 'outro';

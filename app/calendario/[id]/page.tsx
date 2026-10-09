@@ -95,6 +95,8 @@ export default async function EventoDetail({ params }: { params: { id: string } 
             <form action={atualizarEvento.bind(null, id)} className="space-y-3">
               <input type="hidden" name="titulo" value={ev.titulo} />
               <input type="hidden" name="data" value={ev.data} />
+              {/* Sem isto, salvar a ata apagaria o período do evento */}
+              <input type="hidden" name="data_fim" value={ev.data_fim ?? ''} />
               <input type="hidden" name="hora_inicio" value={ev.hora_inicio ?? ''} />
               <input type="hidden" name="hora_fim" value={ev.hora_fim ?? ''} />
               <input type="hidden" name="tipo" value={ev.tipo} />

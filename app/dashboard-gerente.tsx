@@ -4,6 +4,8 @@ import {
 } from 'lucide-react';
 import { getDb } from '@/lib/db';
 import { hojeISO } from './checklist/actions';
+import { proximoAviso } from '@/lib/aviso';
+import AvisoEvento from './aviso-evento';
 
 type Props = { user: any; emp: number; empresaNome: string };
 
@@ -62,8 +64,12 @@ export default async function DashboardGerente({ user, emp, empresaNome }: Props
   const dataBR = (d: string | null) =>
     d ? new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : null;
 
+  const aviso = proximoAviso(emp, user.id, lojaId ?? null, hoje);
+
   return (
     <main className="p-4 md:p-6 space-y-4 md:space-y-6">
+      {aviso && <AvisoEvento evento={aviso} />}
+
       {/* Rotina de hoje — a ação mais imediata */}
       <Link
         href="/checklist"

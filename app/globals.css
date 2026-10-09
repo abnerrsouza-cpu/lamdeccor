@@ -72,6 +72,13 @@ html, body {
 ::-webkit-scrollbar-thumb { background: #D6DEE8; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #B6CBE0; }
 
+/* Brilho que atravessa o aviso de evento no painel */
+@keyframes brilho {
+  0%   { transform: translateX(-100%); }
+  60%  { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* Mobile-first: ajustes globais para telas pequenas */
 @media (max-width: 768px) {
   body { font-size: 14px; }

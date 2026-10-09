@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { redirect } from 'next/navigation';
 import { Plus, Store } from 'lucide-react';
 import { getDb } from '@/lib/db';
@@ -52,7 +53,7 @@ export default async function ConfiguracoesPage() {
           <summary className="cursor-pointer flex items-center gap-2 h2">
             <Plus className="w-4 h-4" /> Nova loja / unidade
           </summary>
-          <form action={criarLoja} className="mt-5 space-y-4">
+          <FormRascunho chave="loja-nova" action={criarLoja} className="mt-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="label">Nome</label>
@@ -68,7 +69,7 @@ export default async function ConfiguracoesPage() {
               </div>
             </div>
             <button type="submit" className="btn-primary">Adicionar loja</button>
-          </form>
+          </FormRascunho>
         </details>
 
         <LojasTable lojas={lojas} />

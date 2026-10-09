@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { getDb } from '@/lib/db';
 import { getEmpresaId, listEmpresas } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
@@ -115,7 +116,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: { e
           <summary className="cursor-pointer flex items-center gap-2 h2">
             <Plus className="w-4 h-4" /> Novo usuário
           </summary>
-          <form action={criarUsuario} className="mt-5 space-y-4">
+          <FormRascunho chave="usuario-novo" action={criarUsuario} className="mt-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">Nome completo</label>
@@ -188,7 +189,7 @@ export default async function UsuariosPage({ searchParams }: { searchParams: { e
               </div>
             )}
             <button type="submit" className="btn-primary">Cadastrar usuário</button>
-          </form>
+          </FormRascunho>
         </details>
 
         <UsersTable

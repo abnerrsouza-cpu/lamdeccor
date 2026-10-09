@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { criarMovimento } from '../actions';
@@ -18,7 +19,7 @@ export default async function NovoMovimentoPage() {
         <Link href="/financeiro" className="text-sm text-navy-500 hover:underline flex items-center gap-1 mb-4">
           <ArrowLeft className="w-3 h-3" /> Voltar
         </Link>
-        <form action={criarMovimento} className="card p-6 max-w-3xl space-y-4">
+        <FormRascunho chave="financeiro-novo" action={criarMovimento} className="card p-6 max-w-3xl space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="label">Tipo</label>
@@ -85,7 +86,7 @@ export default async function NovoMovimentoPage() {
             <Link href="/financeiro" className="btn-secondary">Cancelar</Link>
             <button type="submit" className="btn-primary">Salvar lançamento</button>
           </div>
-        </form>
+        </FormRascunho>
       </main>
     </>
   );

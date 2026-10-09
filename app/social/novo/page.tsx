@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { criarPost } from '../actions';
@@ -17,7 +18,7 @@ export default async function NovoPostPage() {
         <Link href="/social" className="text-sm text-navy-500 hover:underline flex items-center gap-1 mb-4">
           <ArrowLeft className="w-3 h-3" /> Voltar
         </Link>
-        <form action={criarPost} className="card p-6 max-w-3xl space-y-4">
+        <FormRascunho chave="post-novo" action={criarPost} className="card p-6 max-w-3xl space-y-4">
           <div>
             <label className="label">Título / referência interna</label>
             <input name="titulo" required className="input" />
@@ -93,7 +94,7 @@ export default async function NovoPostPage() {
             <Link href="/social" className="btn-secondary">Cancelar</Link>
             <button type="submit" className="btn-primary">Criar post</button>
           </div>
-        </form>
+        </FormRascunho>
       </main>
     </>
   );

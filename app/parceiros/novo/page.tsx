@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -23,10 +24,10 @@ export default async function NovoParceiroPage() {
         <Link href="/parceiros" className="text-sm text-navy-500 hover:underline flex items-center gap-1 mb-4">
           <ArrowLeft className="w-3 h-3" /> Voltar
         </Link>
-        <form action={criarParceiro} className="card p-6 max-w-3xl space-y-4">
+        <FormRascunho chave="parceiro-novo" action={criarParceiro} className="card p-6 max-w-3xl space-y-4">
           <ParceiroCampos />
           <button type="submit" className="btn-primary">Cadastrar parceiro</button>
-        </form>
+        </FormRascunho>
       </main>
     </>
   );

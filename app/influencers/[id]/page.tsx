@@ -192,8 +192,8 @@ export default async function InfluencerDetailPage({ params }: { params: { id: s
           {campanhas.length === 0 ? (
             <p className="text-sm text-slate-muted py-3">Nenhuma campanha registrada.</p>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-line">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border border-line">
+              <table className="w-full text-sm min-w-[560px]">
                 <thead className="bg-navy-50 text-navy-700">
                   <tr>
                     <th className="px-4 py-2 text-left font-semibold">Campanha</th>

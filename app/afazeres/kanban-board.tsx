@@ -382,7 +382,7 @@ function FormFields({ users, item }: { users: User[]; item?: any }) {
           placeholder="O que precisa ser feito? Contexto, links, decisões, etc." />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className="label">Prioridade / urgência</label>
           <select name="prioridade" defaultValue={item?.prioridade ?? 'media'} className="input">
@@ -408,7 +408,7 @@ function FormFields({ users, item }: { users: User[]; item?: any }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="label">Campanha</label>
           <input name="campanha" defaultValue={item?.campanha ?? ''} className="input"

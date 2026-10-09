@@ -202,8 +202,8 @@ function ListaView({ posts, selecionados, toggle, todosSelecionados, alternarTod
   }, [parcial]);
 
   return (
-    <div className="card overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="card overflow-x-auto">
+      <table className="w-full text-sm min-w-[720px]">
         <thead className="bg-navy-50 text-navy-700">
           <tr>
             <th className="px-3 py-2 w-8">

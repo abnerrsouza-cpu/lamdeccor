@@ -123,20 +123,26 @@ html, body {
 .print-only { display: none; }
 
 
-/* === Correção mobile: cards horizontais viram verticais === */
+/* === Ajustes de mobile === */
 @media (max-width: 640px) {
-    /* Cards com flex horizontal viram coluna */
-  .card.flex.items-start {
-        flex-direction: column !important;
-        align-items: stretch !important;
-  }
-    /* Botões com opacity-0 group-hover ficam visíveis em mobile */
+  /*
+   * Sem hover no toque: botões que só aparecem ao passar o mouse
+   * precisam ficar visíveis.
+   */
   [class*="opacity-0"][class*="group-hover"] {
-        opacity: 1 !important;
-  }
-    /* Coluna de ações ocupa largura cheia em mobile */
-  .card .shrink-0 {
-        width: 100%;
-        align-items: stretch;
+    opacity: 1 !important;
   }
 }
+
+/*
+ * Removidas duas regras que quebravam o layout no celular:
+ *
+ *   .card.flex.items-start { flex-direction: column }
+ *   .card .shrink-0 { width: 100% }
+ *
+ * A segunda era a pior: esticava para a largura inteira QUALQUER elemento
+ * com shrink-0 dentro de um card — inclusive os ícones de 20px —, expulsando
+ * o texto para fora do cartão. As duas eram redundantes: os cards que
+ * precisam empilhar no celular já fazem isso com `flex-col sm:flex-row`
+ * e `w-full sm:w-auto`, que é explícito e não afeta quem não pediu.
+ */

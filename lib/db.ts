@@ -19,8 +19,9 @@ let _db: Database.Database | null = null;
  *   4 - logotipo quadrado em PNG (o .jpg antigo saiu do projeto)
  *   5 - checklist diário das lojas
  *   6 - eventos de vários dias e confirmação de ciência
+ *   7 - mural de avisos e pesquisa mensal de satisfação
  */
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 export function getDb() {
   if (_db) return _db;
@@ -266,6 +267,48 @@ function ensureSchema(db: Database.Database) {
      * são o "foi feito em tal dia". Item com loja_id NULL vale para todas as
      * lojas da empresa; com loja_id preenchido é extra daquela loja.
      */
+    /*
+     * Mural de avisos. importante = 1 trava a tela de quem ainda não
+     * confirmou. loja_id NULL = vale para a empresa toda.
+     */
+    CREATE TABLE IF NOT EXISTS avisos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      empresa_id INTEGER REFERENCES empresas(id),
+      loja_id INTEGER REFERENCES lojas(id) ON DELETE CASCADE,
+      titulo TEXT NOT NULL,
+      corpo TEXT,
+      importante INTEGER DEFAULT 0,
+      ativo INTEGER DEFAULT 1,
+      autor_id INTEGER REFERENCES users(id),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS aviso_confirmacoes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      aviso_id INTEGER NOT NULL REFERENCES avisos(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      confirmado_em TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (aviso_id, user_id)
+    );
+
+    /*
+     * Pesquisa mensal do gerente sobre o apoio do marketing. A referencia
+     * é o mês avaliado (YYYY-MM) — uma resposta por pessoa por mês.
+     */
+    CREATE TABLE IF NOT EXISTS pesquisa_respostas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      empresa_id INTEGER REFERENCES empresas(id),
+      loja_id INTEGER REFERENCES lojas(id),
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      referencia TEXT NOT NULL,
+      nota INTEGER NOT NULL,
+      materiais_no_prazo TEXT,
+      faltou TEXT,
+      sugestoes TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (user_id, referencia)
+    );
+
     /* Quem já deu ciência de um evento (o "confirmar" do aviso no painel) */
     CREATE TABLE IF NOT EXISTS evento_ciencias (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -405,7 +448,7 @@ function ensureSchema(db: Database.Database) {
 export const TABELAS_POR_EMPRESA = [
   'lojas', 'users', 'notificacoes', 'influencers', 'campanhas', 'eventos',
   'anuncios', 'integracoes', 'posts', 'financeiro', 'solicitacoes', 'afazeres',
-  'parceiros', 'checklist_itens',
+  'parceiros', 'checklist_itens', 'avisos', 'pesquisa_respostas',
 ] as const;
 
 export const EMPRESA_LAM = 1;

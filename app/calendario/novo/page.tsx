@@ -1,4 +1,5 @@
 import Topbar from '@/components/topbar';
+import FormRascunho from '@/components/form-rascunho';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { criarEvento } from '../actions';
@@ -19,7 +20,7 @@ export default async function NovoEventoPage() {
         <Link href="/calendario" className="text-sm text-navy-500 hover:underline flex items-center gap-1 mb-4">
           <ArrowLeft className="w-3 h-3" /> Voltar
         </Link>
-        <form action={criarEvento} className="card p-6 max-w-3xl space-y-4">
+        <FormRascunho chave="evento-novo" action={criarEvento} className="card p-6 max-w-3xl space-y-4">
           <div>
             <label className="label">Título do evento</label>
             <input name="titulo" required className="input" placeholder="Ex: Briefing comercial Mães" />
@@ -101,7 +102,7 @@ export default async function NovoEventoPage() {
             <Link href="/calendario" className="btn-secondary">Cancelar</Link>
             <button type="submit" className="btn-primary">Criar evento</button>
           </div>
-        </form>
+        </FormRascunho>
       </main>
     </>
   );

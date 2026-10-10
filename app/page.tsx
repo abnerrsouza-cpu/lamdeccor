@@ -4,7 +4,7 @@ import { getDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { getEmpresaAtiva } from '@/lib/empresa';
 import {
-  Wallet, Users, ClipboardCheck, TrendingUp,
+  Users, ClipboardCheck, Inbox, KanbanSquare, TrendingUp,
   Calendar as CalendarIcon, AlertCircle, ArrowRight, Target
 } from 'lucide-react';
 import { ehGerente } from '@/lib/permissions';
@@ -35,13 +35,30 @@ export default async function DashboardPage() {
     );
   }
 
-  const totalSaida = (db.prepare(
-    `SELECT COALESCE(SUM(valor),0) as v FROM financeiro WHERE tipo='saida' AND empresa_id = ?`
-  ).get(emp) as { v: number }).v;
-  const totalEntrada = (db.prepare(
-    `SELECT COALESCE(SUM(valor),0) as v FROM financeiro WHERE tipo='entrada' AND empresa_id = ?`
-  ).get(emp) as { v: number }).v;
-  const roi = totalSaida > 0 ? ((totalEntrada / totalSaida - 1) * 100) : 0;
+  /*
+   * O painel é de operação: valores em dinheiro ficam só no Financeiro,
+   * que tem acesso restrito. Aqui entram contagens do que está em curso.
+   */
+  const nCampanhas = (db.prepare(
+    `SELECT COUNT(*) as c FROM campanhas
+     WHERE empresa_id = ? AND arquivada = 0 AND status IN ('em_execucao','planejamento')`
+  ).get(emp) as { c: number }).c;
+
+  const pedidos = db.prepare(`
+    SELECT
+      COUNT(*) AS abertas,
+      SUM(CASE WHEN prazo IS NOT NULL AND prazo < date('now') THEN 1 ELSE 0 END) AS atrasadas
+    FROM solicitacoes
+    WHERE empresa_id = ? AND status IN ('aberta','em_analise','em_execucao')
+  `).get(emp) as { abertas: number; atrasadas: number | null };
+
+  const tarefas = db.prepare(`
+    SELECT
+      COUNT(*) AS andamento,
+      SUM(CASE WHEN prazo IS NOT NULL AND prazo < date('now') THEN 1 ELSE 0 END) AS atrasadas
+    FROM afazeres
+    WHERE empresa_id = ? AND coluna != 'concluido'
+  `).get(emp) as { andamento: number; atrasadas: number | null };
 
   // Quantas lojas já fecharam a rotina de hoje
   const hoje = await hojeISO();
@@ -105,8 +122,6 @@ export default async function DashboardPage() {
       )
     : null;
 
-  const fmtBRL = (n: number) =>
-    n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
   const primeiroNome = user?.nome.split(' ')[0] ?? '';
 
@@ -156,16 +171,19 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-end justify-between mb-3">
             <div>
-              <span className="eyebrow">Performance</span>
-              <h2 className="h2">Indicadores de marketing</h2>
+              <span className="eyebrow">Hoje</span>
+              <h2 className="h2">Como está a operação</h2>
             </div>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            <StatCard label="Investimento total" value={fmtBRL(totalSaida)} icon={Wallet} helper="Saídas acumuladas" />
-            <StatCard label="Vendas atribuídas" value={fmtBRL(totalEntrada)} icon={TrendingUp}
-              helper="Entradas acumuladas" />
-            <StatCard label="ROI estimado" value={`${roi.toFixed(0)}%`} icon={TrendingUp}
-              helper={roi > 0 ? 'Investimento se pagou' : 'Avaliar'} highlight={roi > 100} />
+            <StatCard label="Campanhas ativas" value={String(nCampanhas)} icon={Target}
+              helper="no ar ou em planejamento" />
+            <StatCard label="Pedidos das lojas" value={String(pedidos.abertas)} icon={Inbox}
+              helper={pedidos.atrasadas ? `${pedidos.atrasadas} com prazo vencido` : 'em aberto, nenhum atrasado'}
+                highlight={!!pedidos.atrasadas} />
+            <StatCard label="Tarefas do time" value={String(tarefas.andamento)} icon={KanbanSquare}
+              helper={tarefas.atrasadas ? `${tarefas.atrasadas} com prazo vencido` : 'nenhuma atrasada'}
+              highlight={!!tarefas.atrasadas} />
             <StatCard label="Rotina das lojas hoje" value={`${lojasOk}/${lojasRotina.length}`}
               icon={ClipboardCheck}
               helper={lojasOk === lojasRotina.length && lojasRotina.length > 0

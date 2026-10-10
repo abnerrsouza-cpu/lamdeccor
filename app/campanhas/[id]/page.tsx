@@ -3,7 +3,10 @@ import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { podeEditar } from '@/lib/permissions';
-import { atualizarCampanha, deletarCampanha, adicionarCanal } from '../actions';
+import { atualizarCampanha, deletarCampanha, adicionarCanal, anexarNaCampanha, removerAnexoCampanha } from '../actions';
+import { ListaAnexos, CampoAnexo } from '@/components/anexos';
+import { listarAnexos } from '@/lib/anexos';
+import FormRascunho from '@/components/form-rascunho';
 import CanalEditor from './canal-editor';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -23,6 +26,8 @@ export default async function CampanhaDetail({ params }: { params: { id: string 
     `SELECT * FROM campanha_canais WHERE campanha_id = ? ORDER BY ordem ASC`
   ).all(id) as CampanhaCanal[];
 
+  const anexos = listarAnexos('campanha', id, emp);
+
   const fmtBRL = (n: number) =>
     n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
@@ -36,7 +41,13 @@ export default async function CampanhaDetail({ params }: { params: { id: string 
 
         {/* Header colorido (estilo capa) */}
         <div className="card overflow-hidden">
-          <div className="h-3" style={{ backgroundColor: c.capa_cor }} />
+          {c.capa_url ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={c.capa_url} alt={`Capa da campanha ${c.nome}`}
+              className="w-full h-40 md:h-56 object-cover" />
+          ) : (
+            <div className="h-3" style={{ backgroundColor: c.capa_cor }} />
+          )}
           <div className="p-6 grid grid-cols-3 gap-4">
             <div>
               <div className="text-xs text-slate-muted">Período</div>
@@ -61,6 +72,46 @@ export default async function CampanhaDetail({ params }: { params: { id: string 
               </div>
             )}
           </div>
+        </div>
+
+        {/* Materiais da campanha */}
+        <div className="card p-6">
+          <h3 className="h2 mb-1">Materiais</h3>
+          <p className="text-sm text-slate-muted mb-4">
+            Artes e PDFs desta campanha. É aqui que os gerentes veem o que vem pela frente.
+          </p>
+
+          {anexos.length === 0 ? (
+            <p className="text-sm text-slate-muted py-2">Nenhum material anexado ainda.</p>
+          ) : (
+            <ListaAnexos
+              anexos={anexos}
+              podeRemover={editar}
+              onRemover={editar
+                ? async (anexoId: number) => {
+                    'use server';
+                    await removerAnexoCampanha(anexoId, id);
+                  }
+                : undefined}
+            />
+          )}
+
+          {editar && (
+            <details className="mt-5">
+              <summary className="btn-secondary cursor-pointer w-fit">
+                <Plus className="w-4 h-4" /> Anexar material
+              </summary>
+              <form action={anexarNaCampanha.bind(null, id)}
+                className="mt-4 space-y-4 p-4 bg-navy-50/50 rounded-lg">
+                <CampoAnexo ajuda="Imagem ou PDF, até 10 MB." />
+                <label className="flex items-center gap-2 text-sm text-slate">
+                  <input type="checkbox" name="usar_como_capa" value="1" className="w-4 h-4" />
+                  Usar esta imagem como capa da campanha
+                </label>
+                <button type="submit" className="btn-primary">Anexar</button>
+              </form>
+            </details>
+          )}
         </div>
 
         {/* Grid de canais (estilo briefing) */}

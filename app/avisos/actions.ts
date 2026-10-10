@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { getDb } from '@/lib/db';
+import { salvarAnexo, apagarAnexo } from '@/lib/anexos';
+import { redirect } from 'next/navigation';
 import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { ehAdmin } from '@/lib/permissions';
@@ -15,7 +17,7 @@ export async function criarAviso(formData: FormData) {
   if (!titulo) return;
 
   const db = getDb();
-  db.prepare(`
+  const r = db.prepare(`
     INSERT INTO avisos (empresa_id, loja_id, titulo, corpo, importante, ativo, autor_id)
     VALUES (?, ?, ?, ?, ?, 1, ?)
   `).run(
@@ -26,6 +28,14 @@ export async function criarAviso(formData: FormData) {
     formData.get('importante') ? 1 : 0,
     user!.id
   );
+  const arquivo = formData.get('arquivo') as File | null;
+  if (arquivo && arquivo.size > 0) {
+    await salvarAnexo({
+      arquivo, empresaId: await getEmpresaId(), entidade: 'aviso',
+      entidadeId: Number(r.lastInsertRowid), autorId: user!.id,
+    });
+  }
+
   revalidatePath('/avisos');
   revalidatePath('/');
 }
@@ -84,4 +94,34 @@ export async function responderPesquisa(formData: FormData) {
   );
   revalidatePath('/');
   revalidatePath('/avisos');
+}
+
+/** Anexa imagem ou PDF a um aviso do mural. */
+export async function anexarNoAviso(avisoId: number, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!ehAdmin(user?.role)) return;
+
+  const emp = await getEmpresaId();
+  const existe = getDb().prepare('SELECT id FROM avisos WHERE id = ? AND empresa_id = ?')
+    .get(avisoId, emp);
+  if (!existe) return;
+
+  const arquivo = formData.get('arquivo') as File | null;
+  if (!arquivo || arquivo.size === 0) return;
+
+  const r = await salvarAnexo({
+    arquivo, empresaId: emp, entidade: 'aviso', entidadeId: avisoId, autorId: user!.id,
+  });
+  if (!r.ok) redirect(`/avisos?error=${encodeURIComponent(r.erro)}`);
+
+  revalidatePath('/avisos');
+  revalidatePath('/');
+}
+
+export async function removerAnexoAviso(anexoId: number) {
+  const user = await getCurrentUser();
+  if (!ehAdmin(user?.role)) return;
+  apagarAnexo(anexoId, await getEmpresaId());
+  revalidatePath('/avisos');
+  revalidatePath('/');
 }

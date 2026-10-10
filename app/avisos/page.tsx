@@ -6,7 +6,9 @@ import { getEmpresaId } from '@/lib/empresa';
 import { getCurrentUser } from '@/lib/auth';
 import { ehAdmin } from '@/lib/permissions';
 import FormRascunho from '@/components/form-rascunho';
-import { criarAviso, arquivarAviso } from './actions';
+import { ListaAnexos, CampoAnexo } from '@/components/anexos';
+import { listarAnexos } from '@/lib/anexos';
+import { criarAviso, arquivarAviso, removerAnexoAviso } from './actions';
 import type { Loja } from '@/lib/types';
 
 export default async function AvisosPage() {
@@ -47,6 +49,9 @@ export default async function AvisosPage() {
     FROM users u LEFT JOIN lojas l ON l.id = u.loja_id
     WHERE u.empresa_id = ? AND u.ativo = 1 AND u.role = 'gerente_loja'
   `).all(emp) as any[] : [];
+
+  const anexosPorAviso: Record<number, ReturnType<typeof listarAnexos>> = {};
+  for (const a of avisos) anexosPorAviso[a.id] = listarAnexos('aviso', a.id, emp);
 
   const lojas = admin
     ? db.prepare('SELECT * FROM lojas WHERE empresa_id = ? ORDER BY nome').all(emp) as Loja[]
@@ -109,6 +114,7 @@ export default async function AvisosPage() {
                   </span>
                 </label>
               </div>
+              <CampoAnexo ajuda="Imagem ou PDF, até 10 MB. Ex: a arte da campanha ou o manual da promoção." />
               <button type="submit" className="btn-primary">Publicar</button>
             </FormRascunho>
           </details>
@@ -198,6 +204,16 @@ export default async function AvisosPage() {
                     </div>
                     <h3 className="h3 mt-1">{a.titulo}</h3>
                     {a.corpo && <p className="text-sm text-slate mt-1 whitespace-pre-wrap">{a.corpo}</p>}
+
+                    {anexosPorAviso[a.id]?.length > 0 && (
+                      <div className="mt-3">
+                        <ListaAnexos
+                          anexos={anexosPorAviso[a.id]}
+                          podeRemover={admin}
+                          onRemover={admin ? removerAnexoAviso : undefined}
+                        />
+                      </div>
+                    )}
                     <div className="text-xs text-slate-muted mt-2">
                       {a.autor_nome && `${a.autor_nome} · `}
                       {new Date(a.created_at).toLocaleDateString('pt-BR')}

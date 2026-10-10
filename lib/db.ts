@@ -7,6 +7,10 @@ const DB_PATH = process.env.DATABASE_PATH ?? path.join(process.cwd(), 'data', 'l
 const DATA_DIR = path.dirname(DB_PATH);
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
+/** Uploads ficam no mesmo volume do banco, para sobreviverem aos deploys. */
+export const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
 let _db: Database.Database | null = null;
 
 /**
@@ -20,8 +24,9 @@ let _db: Database.Database | null = null;
  *   5 - checklist diário das lojas
  *   6 - eventos de vários dias e confirmação de ciência
  *   7 - mural de avisos e pesquisa mensal de satisfação
+ *   8 - anexos (imagens e PDFs) em campanhas e avisos
  */
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 export function getDb() {
   if (_db) return _db;
@@ -271,6 +276,24 @@ function ensureSchema(db: Database.Database) {
      * Mural de avisos. importante = 1 trava a tela de quem ainda não
      * confirmou. loja_id NULL = vale para a empresa toda.
      */
+    /*
+     * Arquivos enviados pelo time. Ficam no volume, não no banco: o SQLite
+     * guarda só o ponteiro. O caminho é relativo à pasta de uploads e nunca
+     * vem do usuário — é gerado na gravação, para não haver path traversal.
+     */
+    CREATE TABLE IF NOT EXISTS anexos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      empresa_id INTEGER REFERENCES empresas(id),
+      entidade TEXT NOT NULL,
+      entidade_id INTEGER NOT NULL,
+      nome_original TEXT NOT NULL,
+      caminho TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      tamanho INTEGER NOT NULL,
+      autor_id INTEGER REFERENCES users(id),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS avisos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       empresa_id INTEGER REFERENCES empresas(id),
@@ -416,6 +439,9 @@ function ensureSchema(db: Database.Database) {
   for (const t of TABELAS_POR_EMPRESA) {
     db.prepare(`UPDATE ${t} SET empresa_id = ? WHERE empresa_id IS NULL`).run(EMPRESA_LAM);
   }
+  // Foto de capa da campanha
+  addColumn(db, 'campanhas', 'capa_url', 'TEXT');
+
   // Eventos que ocupam um período (semana da Black Friday, por exemplo)
   addColumn(db, 'eventos', 'data_fim', 'TEXT');
 
@@ -439,6 +465,7 @@ function ensureSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_indicacoes_parceiro ON parceiro_indicacoes(parceiro_id);
     CREATE INDEX IF NOT EXISTS idx_conversas_parceiro  ON parceiro_conversas(parceiro_id, data DESC);
     CREATE INDEX IF NOT EXISTS idx_checklist_marcacoes ON checklist_marcacoes(loja_id, data);
+    CREATE INDEX IF NOT EXISTS idx_anexos_entidade ON anexos(entidade, entidade_id);
   `);
 
   db.pragma(`user_version = ${SCHEMA_VERSION}`);
@@ -448,7 +475,7 @@ function ensureSchema(db: Database.Database) {
 export const TABELAS_POR_EMPRESA = [
   'lojas', 'users', 'notificacoes', 'influencers', 'campanhas', 'eventos',
   'anuncios', 'integracoes', 'posts', 'financeiro', 'solicitacoes', 'afazeres',
-  'parceiros', 'checklist_itens', 'avisos', 'pesquisa_respostas',
+  'parceiros', 'checklist_itens', 'avisos', 'pesquisa_respostas', 'anexos',
 ] as const;
 
 export const EMPRESA_LAM = 1;

@@ -4,7 +4,9 @@ const nextConfig = {
 typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
   experimental: {
-    serverComponentsExternalPackages: ['better-sqlite3']
+    serverComponentsExternalPackages: ['better-sqlite3'],
+    // Padrão do Next é 1 MB, que rejeitaria qualquer PDF de campanha
+    serverActions: { bodySizeLimit: '12mb' },
   },
   // Garante que o Image Optimization aceite o domínio (caso adicione URLs externas no futuro)
   images: {

@@ -103,6 +103,8 @@ export interface Campanha {
   kpi_base: string;
   status: 'planejamento' | 'em_execucao' | 'finalizada' | 'pausada';
   capa_cor: string;
+  /** Foto de capa enviada; NULL = usa só a faixa de cor */
+  capa_url: string | null;
   arquivada: number;
 }
 

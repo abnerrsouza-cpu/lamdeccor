@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { getEmpresaId } from '@/lib/empresa';
+import { getCurrentUser } from '@/lib/auth';
+import { podeEditar } from '@/lib/permissions';
+import { salvarAnexo, apagarAnexo } from '@/lib/anexos';
 
 export async function criarCampanha(formData: FormData) {
   const db = getDb();
@@ -129,5 +132,50 @@ export async function deletarMultiplasCampanhas(ids: number[]) {
   const placeholders = ids.map(() => '?').join(',');
   db.prepare(`DELETE FROM campanhas WHERE empresa_id = ? AND id IN (${placeholders})`)
     .run(await getEmpresaId(), ...ids);
+  revalidatePath('/campanhas');
+}
+
+/** Anexa um arquivo à campanha. Imagem marcada como capa vira a foto dela. */
+export async function anexarNaCampanha(campanhaId: number, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!podeEditar(user?.role)) return;
+
+  const emp = await getEmpresaId();
+  const db = getDb();
+  const existe = db.prepare('SELECT id FROM campanhas WHERE id = ? AND empresa_id = ?')
+    .get(campanhaId, emp);
+  if (!existe) return;
+
+  const arquivo = formData.get('arquivo') as File | null;
+  if (!arquivo || arquivo.size === 0) return;
+
+  const r = await salvarAnexo({
+    arquivo, empresaId: emp, entidade: 'campanha', entidadeId: campanhaId, autorId: user?.id ?? null,
+  });
+  if (!r.ok) {
+    redirect(`/campanhas/${campanhaId}?error=${encodeURIComponent(r.erro)}`);
+  }
+
+  if (formData.get('usar_como_capa') && arquivo.type.startsWith('image/')) {
+    db.prepare('UPDATE campanhas SET capa_url = ? WHERE id = ? AND empresa_id = ?')
+      .run(`/api/arquivo/${r.id}`, campanhaId, emp);
+  }
+
+  revalidatePath(`/campanhas/${campanhaId}`);
+  revalidatePath('/campanhas');
+}
+
+export async function removerAnexoCampanha(anexoId: number, campanhaId: number) {
+  const user = await getCurrentUser();
+  if (!podeEditar(user?.role)) return;
+
+  const emp = await getEmpresaId();
+  const db = getDb();
+  // Se era a capa, a campanha volta a não ter foto
+  db.prepare('UPDATE campanhas SET capa_url = NULL WHERE capa_url = ? AND empresa_id = ?')
+    .run(`/api/arquivo/${anexoId}`, emp);
+  apagarAnexo(anexoId, emp);
+
+  revalidatePath(`/campanhas/${campanhaId}`);
   revalidatePath('/campanhas');
 }

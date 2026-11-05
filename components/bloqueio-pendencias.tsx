@@ -2,36 +2,51 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Check, Star, PartyPopper } from 'lucide-react';
+import { AlertTriangle, Check, Star, PartyPopper, CalendarCheck, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { soltarConfete } from './confete';
 import FormRascunho from './form-rascunho';
 import { confirmarAviso, responderPesquisa } from '@/app/avisos/actions';
-import type { AvisoPendente, PesquisaPendente } from '@/lib/pendencias';
+import { responderRetornoEvento } from '@/app/calendario/actions';
+import type { AvisoPendente, PesquisaPendente, EventoParaAvaliar } from '@/lib/pendencias';
 
 /**
  * Janela que trava a tela enquanto houver pendência: primeiro os avisos
  * importantes (confirmar que leu, sem confete — é obrigação), depois a
  * pesquisa do mês (aí sim confete, é contribuição).
  */
-export default function BloqueioPendencias({ avisos, pesquisa }: {
+export default function BloqueioPendencias({ avisos, eventos, pesquisa }: {
   avisos: AvisoPendente[];
+  /** Eventos já passados na loja, aguardando o retorno do gerente */
+  eventos: EventoParaAvaliar[];
   pesquisa: PesquisaPendente | null;
 }) {
   const router = useRouter();
   const [idx, setIdx] = useState(0);
+  const [idxEv, setIdxEv] = useState(0);
+  const [tudoCerto, setTudoCerto] = useState<'sim' | 'nao' | null>(null);
   const [pesquisaFeita, setPesquisaFeita] = useState(false);
   const [agradecendo, setAgradecendo] = useState(false);
   const [nota, setNota] = useState(0);
 
   // A janela some sozinha depois do agradecimento, não por troca de props
   const avisoAtual = agradecendo ? undefined : avisos[idx];
-  const mostrarPesquisa = !avisoAtual && pesquisa && !pesquisaFeita;
+  const eventoAtual = agradecendo || avisoAtual ? undefined : eventos[idxEv];
+  const mostrarPesquisa = !avisoAtual && !eventoAtual && pesquisa && !pesquisaFeita;
 
-  if (!avisoAtual && !mostrarPesquisa && !agradecendo) return null;
+  if (!avisoAtual && !eventoAtual && !mostrarPesquisa && !agradecendo) return null;
 
   const confirmar = async (id: number) => {
     await confirmarAviso(id);
     setIdx(i => i + 1);
+    router.refresh();
+  };
+
+  const enviarRetorno = async (form: HTMLFormElement, eventoId: number) => {
+    const dados = new FormData(form);
+    if (!dados.get('tudo_certo')) return;
+    setIdxEv(i => i + 1);
+    setTudoCerto(null);
+    await responderRetornoEvento(eventoId, dados);
     router.refresh();
   };
 
@@ -92,6 +107,92 @@ export default function BloqueioPendencias({ avisos, pesquisa }: {
                 <Check className="w-4 h-4" /> Li e estou ciente
               </button>
             </div>
+          </>
+        ) : eventoAtual ? (
+          <>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-navy-50 flex items-center justify-center shrink-0">
+                <CalendarCheck className="w-5 h-5 text-navy-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="eyebrow text-navy-500">Como foi?</div>
+                <h2 className="text-lg font-bold text-navy-900 mt-0.5">
+                  Tivemos uma data na sua loja
+                </h2>
+                <p className="text-sm text-slate mt-1">
+                  <strong>{eventoAtual.titulo}</strong>
+                  {' — '}
+                  {new Date((eventoAtual.data_fim ?? eventoAtual.data) + 'T12:00:00')
+                    .toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                </p>
+              </div>
+            </div>
+
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                enviarRetorno(e.currentTarget, eventoAtual.id);
+              }}
+              className="mt-5 space-y-4"
+            >
+              <input type="hidden" name="tudo_certo" value={tudoCerto ?? ''} />
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTudoCerto('sim')}
+                  aria-pressed={tudoCerto === 'sim'}
+                  className={`py-4 rounded-lg border-2 flex flex-col items-center gap-1.5 transition-colors ${
+                    tudoCerto === 'sim'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                      : 'border-line text-slate hover:border-navy-300'
+                  }`}
+                >
+                  <ThumbsUp className="w-5 h-5" />
+                  <span className="text-sm font-bold">Deu tudo certo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTudoCerto('nao')}
+                  aria-pressed={tudoCerto === 'nao'}
+                  className={`py-4 rounded-lg border-2 flex flex-col items-center gap-1.5 transition-colors ${
+                    tudoCerto === 'nao'
+                      ? 'border-amber-500 bg-amber-50 text-amber-700'
+                      : 'border-line text-slate hover:border-navy-300'
+                  }`}
+                >
+                  <ThumbsDown className="w-5 h-5" />
+                  <span className="text-sm font-bold">Teve problema</span>
+                </button>
+              </div>
+
+              <div>
+                <label className="label">
+                  {tudoCerto === 'nao' ? 'O que deu errado?' : 'Quer contar algo? (opcional)'}
+                </label>
+                <textarea
+                  name="comentario"
+                  rows={3}
+                  required={tudoCerto === 'nao'}
+                  className="input"
+                  placeholder={tudoCerto === 'nao'
+                    ? 'Descreva o que aconteceu, para o time resolver'
+                    : 'Como o público reagiu, o que funcionou...'}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={!tudoCerto}
+                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {tudoCerto ? 'Enviar' : 'Escolha uma opção acima'}
+              </button>
+              {eventos.length > 1 && (
+                <p className="text-xs text-slate-muted text-center">
+                  {idxEv + 1} de {eventos.length}
+                </p>
+              )}
+            </form>
           </>
         ) : (
           <>

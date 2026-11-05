@@ -8,6 +8,14 @@ export type AvisoPendente = {
   created_at: string;
 };
 
+export type EventoParaAvaliar = {
+  id: number;
+  titulo: string;
+  data: string;
+  data_fim: string | null;
+  tipo: string;
+};
+
 export type PesquisaPendente = {
   referencia: string;
   mesNome: string;
@@ -41,6 +49,8 @@ export function pendencias(
   ehGerenteLoja: boolean
 ) {
   const db = getDb();
+  // Data de hoje em Brasília, para comparar com as datas dos eventos
+  const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
 
   const avisos = db.prepare(`
     SELECT a.id, a.titulo, a.corpo, a.created_at, u.nome AS autor_nome
@@ -55,6 +65,22 @@ export function pendencias(
     ORDER BY a.created_at
   `).all(userId, emp, lojaId ?? -1, userId) as AvisoPendente[];
 
+  /*
+   * Eventos que já aconteceram na loja desta pessoa e sobre os quais ela
+   * ainda não contou como foi. Limitado aos últimos 14 dias: não faz
+   * sentido perguntar de algo de dois meses atrás.
+   */
+  const eventos = ehGerenteLoja && lojaId ? db.prepare(`
+    SELECT e.id, e.titulo, e.data, e.data_fim, e.tipo
+    FROM eventos e
+    LEFT JOIN evento_retornos r ON r.evento_id = e.id AND r.user_id = ?
+    WHERE e.empresa_id = ? AND e.loja_id = ?
+      AND COALESCE(e.data_fim, e.data) < ?
+      AND COALESCE(e.data_fim, e.data) >= date(?, '-14 days')
+      AND r.id IS NULL
+    ORDER BY COALESCE(e.data_fim, e.data) DESC
+  `).all(userId, emp, lojaId, hoje, hoje) as EventoParaAvaliar[] : [];
+
   let pesquisa: PesquisaPendente | null = null;
   if (ehGerenteLoja) {
     const { ref, nome, aberta } = janelaDaPesquisa();
@@ -66,5 +92,5 @@ export function pendencias(
     }
   }
 
-  return { avisos, pesquisa };
+  return { avisos, eventos, pesquisa };
 }

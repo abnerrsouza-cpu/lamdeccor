@@ -60,7 +60,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   // Avisos importantes e pesquisa do mês travam a tela até serem resolvidos
   const pend = publica || !user
-    ? { avisos: [], pesquisa: null }
+    ? { avisos: [], eventos: [], pesquisa: null }
     : pendencias(empresaAtiva!.id, user.id, user.loja_id ?? null, ehGerente(user.role));
 
   return (
@@ -71,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           as pendências zeram, a tela de agradecimento sumiria antes de ser
           lida. Quem decide aparecer ou não é o próprio componente.
         */}
-        {!publica && <BloqueioPendencias avisos={pend.avisos} pesquisa={pend.pesquisa} />}
+        {!publica && <BloqueioPendencias avisos={pend.avisos} eventos={pend.eventos} pesquisa={pend.pesquisa} />}
         {publica ? (
           <div className="min-h-screen bg-cream">{children}</div>
         ) : (

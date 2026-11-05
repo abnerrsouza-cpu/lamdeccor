@@ -50,6 +50,7 @@ export default async function NovoEventoPage() {
             <div>
               <label className="label">Tipo</label>
               <select name="tipo" className="input">
+                <option value="gravacao">Gravação</option>
                 <option value="reuniao">Reunião</option>
                 <option value="campanha">Campanha</option>
                 <option value="lancamento">Lançamento</option>
@@ -70,8 +71,9 @@ export default async function NovoEventoPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Loja (se aplicável)</label>
-              <select name="loja_id" className="input">
-                <option value="">— Nenhuma —</option>
+              <select name="loja_id" required className="input" defaultValue="">
+                <option value="" disabled>Escolha a unidade</option>
+                <option value="todas">Todas as lojas</option>
                 {lojas.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}
               </select>
             </div>

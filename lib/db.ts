@@ -25,8 +25,9 @@ let _db: Database.Database | null = null;
  *   6 - eventos de vários dias e confirmação de ciência
  *   7 - mural de avisos e pesquisa mensal de satisfação
  *   8 - anexos (imagens e PDFs) em campanhas e avisos
+ *   9 - retorno do gerente sobre eventos na loja dele
  */
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 
 export function getDb() {
   if (_db) return _db;
@@ -330,6 +331,21 @@ function ensureSchema(db: Database.Database) {
       sugestoes TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE (user_id, referencia)
+    );
+
+    /*
+     * Como foi o evento, na visão de quem estava na loja. Pedido ao gerente
+     * no dia seguinte; uma resposta por pessoa por evento.
+     */
+    CREATE TABLE IF NOT EXISTS evento_retornos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      evento_id INTEGER NOT NULL REFERENCES eventos(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      loja_id INTEGER REFERENCES lojas(id),
+      tudo_certo INTEGER NOT NULL,
+      comentario TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (evento_id, user_id)
     );
 
     /* Quem já deu ciência de um evento (o "confirmar" do aviso no painel) */

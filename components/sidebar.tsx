@@ -11,6 +11,7 @@ import {
 import clsx from 'clsx';
 import EmpresaSwitcher from './empresa-switcher';
 import { moduloVisivel } from '@/lib/modulos';
+import { logout } from '@/lib/auth';
 import type { Empresa } from '@/lib/empresa';
 
 type RoleAccess = 'todos' | 'staff' | 'admin';
@@ -143,7 +144,7 @@ export default function Sidebar({ user, empresaAtiva, empresas }: {
               <div className="text-xs font-semibold text-white truncate">{user.nome}</div>
               <div className="text-[10px] text-navy-300 truncate">{user.cargo ?? user.role}</div>
             </div>
-            <form action="/api/logout" method="POST">
+            <form action={logout}>
               <button title="Sair" className="text-navy-300 hover:text-white">
                 <LogOut className="w-4 h-4" />
               </button>
